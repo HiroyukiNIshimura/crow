@@ -73,6 +73,7 @@ model WorkLog {
   id              String   @id @default(cuid())
   userId          String
   workDate        DateTime
+  recordedAt      DateTime?
   title           String
   note            String?
   durationMinutes Int?
@@ -81,6 +82,7 @@ model WorkLog {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, workDate])
+  @@index([recordedAt])
   @@map("work_logs")
 }
 

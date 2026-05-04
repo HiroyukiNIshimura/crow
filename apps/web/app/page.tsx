@@ -104,6 +104,19 @@ function toClockLabel(dateText: string) {
     }).format(new Date(dateText));
 }
 
+function toTimeInputValue(dateText: string | null) {
+    if (!dateText) {
+        return '';
+    }
+
+    return new Intl.DateTimeFormat('sv-SE', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Tokyo',
+    }).format(new Date(dateText));
+}
+
 function buildCalendarCells(
     year: number,
     month: number,
@@ -451,6 +464,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                         max={1440}
                                         step={1}
                                     />
+                                    <input
+                                        className="input input-bordered input-sm w-full"
+                                        type="time"
+                                        name="workTime"
+                                    />
                                     <textarea
                                         className="textarea textarea-bordered textarea-sm min-h-20 resize-none"
                                         name="note"
@@ -472,7 +490,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                         <article key={log.id} className="rounded-md border border-base-200 p-3">
                                             <div className="mb-2 flex items-start justify-between gap-3">
                                                 <div className="text-xs font-medium text-base-content/50">
-                                                    {toClockLabel(log.createdAt)} 記録
+                                                    {toClockLabel(log.recordedAt ?? log.createdAt)} 記録
                                                 </div>
                                                 <span className="badge badge-ghost shrink-0">
                                                     {log.durationMinutes
@@ -502,6 +520,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                                     min={0}
                                                     max={1440}
                                                     step={1}
+                                                />
+                                                <input
+                                                    className="input input-bordered input-sm w-full"
+                                                    type="time"
+                                                    name="workTime"
+                                                    defaultValue={toTimeInputValue(log.recordedAt)}
                                                 />
                                                 <textarea
                                                     className="textarea textarea-bordered textarea-sm min-h-20 resize-none"

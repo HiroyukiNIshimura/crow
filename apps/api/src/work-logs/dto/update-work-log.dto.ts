@@ -15,6 +15,10 @@ export class UpdateWorkLogDto {
     note?: string;
 
     @IsOptional()
+    @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    workTime?: string;
+
+    @IsOptional()
     @IsInt()
     @Min(0)
     @Max(24 * 60)

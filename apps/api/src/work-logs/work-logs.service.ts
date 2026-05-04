@@ -22,6 +22,14 @@ export class WorkLogsService {
         return { end, start };
     }
 
+    private buildRecordedAt(dateText: string, workTime?: string) {
+        if (!workTime) {
+            return null;
+        }
+
+        return new Date(`${dateText}T${workTime}:00+09:00`);
+    }
+
     async getMonth(userId: string, year: number, month: number) {
         const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
         const end = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
@@ -142,6 +150,7 @@ export class WorkLogsService {
                 id: true,
                 title: true,
                 note: true,
+                recordedAt: true,
                 durationMinutes: true,
                 createdAt: true,
                 updatedAt: true,
@@ -150,7 +159,21 @@ export class WorkLogsService {
             orderBy: [{ workDate: 'asc' }, { createdAt: 'asc' }],
         });
 
-        const totalDurationMinutes = logs.reduce((acc, log) => acc + (log.durationMinutes ?? 0), 0);
+        const sortedLogs = [...logs].sort((a, b) => {
+            const aTime = (a.recordedAt ?? a.createdAt).getTime();
+            const bTime = (b.recordedAt ?? b.createdAt).getTime();
+
+            if (aTime !== bTime) {
+                return aTime - bTime;
+            }
+
+            return a.createdAt.getTime() - b.createdAt.getTime();
+        });
+
+        const totalDurationMinutes = sortedLogs.reduce(
+            (acc, log) => acc + (log.durationMinutes ?? 0),
+            0,
+        );
 
         const dayNoteRecord = await this.prisma.dailyNote.findUnique({
             where: {
@@ -168,18 +191,20 @@ export class WorkLogsService {
             date: dateText,
             dayNote: dayNoteRecord?.note ?? null,
             totalDurationMinutes,
-            logs,
+            logs: sortedLogs,
         };
     }
 
     async create(userId: string, input: CreateWorkLogDto) {
         const [year, month, day] = input.workDate.split('-').map(Number);
         const workDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        const recordedAt = this.buildRecordedAt(input.workDate, input.workTime);
 
         return this.prisma.workLog.create({
             data: {
                 userId,
                 workDate,
+                recordedAt,
                 title: input.title.trim(),
                 note: input.note?.trim() ? input.note.trim() : null,
                 durationMinutes: input.durationMinutes,
@@ -187,6 +212,7 @@ export class WorkLogsService {
             select: {
                 id: true,
                 workDate: true,
+                recordedAt: true,
                 title: true,
                 note: true,
                 durationMinutes: true,
@@ -204,6 +230,7 @@ export class WorkLogsService {
             },
             select: {
                 id: true,
+                workDate: true,
             },
         });
 
@@ -218,6 +245,13 @@ export class WorkLogsService {
               })()
             : undefined;
 
+        const effectiveDateText = input.workDate ?? existing.workDate.toISOString().slice(0, 10);
+
+        const recordedAt =
+            typeof input.workTime === 'string'
+                ? this.buildRecordedAt(effectiveDateText, input.workTime)
+                : undefined;
+
         return this.prisma.workLog.update({
             where: { id },
             data: {
@@ -229,10 +263,12 @@ export class WorkLogsService {
                     ? { durationMinutes: input.durationMinutes }
                     : {}),
                 ...(workDate ? { workDate } : {}),
+                ...(recordedAt !== undefined ? { recordedAt } : {}),
             },
             select: {
                 id: true,
                 workDate: true,
+                recordedAt: true,
                 title: true,
                 note: true,
                 durationMinutes: true,

@@ -32,6 +32,7 @@ export type DayLogsResponse = {
         id: string;
         title: string;
         note: string | null;
+        recordedAt: string | null;
         durationMinutes: number | null;
         createdAt: string;
         updatedAt: string;
@@ -162,6 +163,7 @@ export async function createWorkLogAction(formData: FormData) {
     const date = String(formData.get('date') ?? '');
     const title = String(formData.get('title') ?? '').trim();
     const note = String(formData.get('note') ?? '').trim();
+    const workTime = String(formData.get('workTime') ?? '').trim();
     const durationText = String(formData.get('durationMinutes') ?? '').trim();
     const durationMinutes = durationText ? Number(durationText) : undefined;
 
@@ -175,6 +177,10 @@ export async function createWorkLogAction(formData: FormData) {
 
     if (typeof durationMinutes === 'number' && !Number.isInteger(durationMinutes)) {
         redirect(getRedirectUrl(month, date, '作業時間は分単位で入力してください。'));
+    }
+
+    if (workTime && !/^([01]\d|2[0-3]):([0-5]\d)$/.test(workTime)) {
+        redirect(getRedirectUrl(month, date, '作業時刻は HH:mm 形式で入力してください。'));
     }
 
     const authContext = await getAuthContext();
@@ -198,6 +204,7 @@ export async function createWorkLogAction(formData: FormData) {
                 workDate: date,
                 title,
                 note,
+                ...(workTime ? { workTime } : {}),
                 durationMinutes,
             }),
             cache: 'no-store',
@@ -261,6 +268,7 @@ export async function updateWorkLogAction(formData: FormData) {
     const logId = String(formData.get('logId') ?? '');
     const title = String(formData.get('title') ?? '').trim();
     const note = String(formData.get('note') ?? '').trim();
+    const workTime = String(formData.get('workTime') ?? '').trim();
     const durationText = String(formData.get('durationMinutes') ?? '').trim();
     const durationMinutes = durationText ? Number(durationText) : undefined;
 
@@ -278,6 +286,10 @@ export async function updateWorkLogAction(formData: FormData) {
 
     if (typeof durationMinutes === 'number' && !Number.isInteger(durationMinutes)) {
         redirect(getRedirectUrl(month, date, '作業時間は分単位で入力してください。'));
+    }
+
+    if (workTime && !/^([01]\d|2[0-3]):([0-5]\d)$/.test(workTime)) {
+        redirect(getRedirectUrl(month, date, '作業時刻は HH:mm 形式で入力してください。'));
     }
 
     const authContext = await getAuthContext();
@@ -300,6 +312,7 @@ export async function updateWorkLogAction(formData: FormData) {
             body: JSON.stringify({
                 title,
                 note,
+                ...(workTime ? { workTime } : {}),
                 durationMinutes,
             }),
             cache: 'no-store',
