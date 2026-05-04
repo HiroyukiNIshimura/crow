@@ -1,0 +1,111 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": true
+    },
+    "files": {
+        "ignoreUnknown": false,
+        "includes": [
+            "apps/**/*.{ts,tsx,json}",
+            "packages/**/*.{ts,tsx,json}",
+            "*.{ts,tsx,json}",
+            "!**/node_modules",
+            "!**/.next",
+            "!**/dist",
+            "!**/build",
+            "!**/coverage",
+            "!**/*.d.ts",
+            "!**/generated",
+            "!package-lock.json"
+        ]
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 100,
+        "lineEnding": "lf"
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "correctness": {
+                "noUnusedVariables": "error",
+                "noUnusedImports": "error"
+            },
+            "suspicious": {
+                "noExplicitAny": "warn",
+                "noVar": "error"
+            },
+            "style": {
+                "useConst": "error"
+            },
+            "security": {
+                "noDangerouslySetInnerHtml": "error"
+            }
+        }
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "single",
+            "trailingCommas": "all",
+            "semicolons": "always"
+        },
+        "linter": {
+            "enabled": true
+        },
+        "parser": {
+            "unsafeParameterDecoratorsEnabled": true
+        }
+    },
+    "json": {
+        "formatter": {
+            "indentStyle": "space",
+            "indentWidth": 4
+        }
+    },
+    "overrides": [
+        {
+            "includes": [
+                "apps/web/**"
+            ],
+            "linter": {
+                "rules": {
+                    "correctness": {
+                        "useExhaustiveDependencies": "warn"
+                    }
+                }
+            }
+        },
+        {
+            "includes": [
+                "apps/api/**"
+            ],
+            "linter": {
+                "rules": {
+                    "correctness": {
+                        "noUnusedFunctionParameters": "off"
+                    },
+                    "style": {
+                        "useImportType": "off"
+                    }
+                }
+            }
+        },
+        {
+            "includes": [
+                "**/*.config.{ts,js,mjs,cjs}"
+            ],
+            "linter": {
+                "rules": {
+                    "correctness": {
+                        "noUnusedVariables": "off"
+                    }
+                }
+            }
+        }
+    ]
+}

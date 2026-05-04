@@ -1,0 +1,33 @@
+{
+    "name": "crow",
+    "private": true,
+    "version": "0.1.0",
+    "packageManager": "npm@10.9.2",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "concurrently -n web,api \"npm run dev:web\" \"npm run dev:api\"",
+        "dev:web": "set -a && . ./.env && set +a && npm run dev -w @crow/web",
+        "dev:api": "set -a && . ./.env && set +a && npm run start:dev -w @crow/api",
+        "build": "npm run build --workspaces --if-present",
+        "typecheck": "npm run typecheck --workspaces --if-present",
+        "lint": "biome lint .",
+        "lint:fix": "biome lint --write .",
+        "format": "biome format --write .",
+        "check": "biome check .",
+        "check:fix": "biome check --write .",
+        "db:generate": "npx prisma generate --schema packages/database/prisma/schema.prisma",
+        "db:migrate": "npx prisma migrate dev --schema packages/database/prisma/schema.prisma",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down",
+        "docker:logs": "docker-compose logs -f postgres"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.4.14",
+        "concurrently": "^9.1.2",
+        "dotenv": "^16.4.7",
+        "typescript": "^5.8.3"
+    }
+}
