@@ -1,7 +1,7 @@
 ---
 description: "Crow プロジェクトの Cookie ベースセッション認証の実装ガイド。Guard、DTO、Middleware、SessionStore の具体的なコード例を含みます。認証機能の追加・修正時に使用してください。"
 name: "認証実装ガイド"
-applyTo: apps/api/src/auth/**, apps/web/middleware.ts, apps/web/app/**/*.tsx
+applyTo: apps/api/src/auth/**, apps/web/proxy.ts, apps/web/app/**/*.tsx
 ---
 
 # 認証実装ガイド
@@ -341,9 +341,9 @@ export class AuthModule {}
 
 ## Next.js 実装パターン
 
-### 1. Middleware（全体ルート保護）
+### 1. Proxy（全体ルート保護）
 
-`apps/web/middleware.ts`
+`apps/web/proxy.ts`
 
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
@@ -351,7 +351,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // 認証不要なルート
 const publicRoutes = ['/login', '/api/auth/login'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const sessionId = request.cookies.get('sessionId')?.value;
   const pathname = request.nextUrl.pathname;
 
@@ -525,6 +525,6 @@ export function LoginForm() {
 | 問題 | 原因 | 解決方法 |
 |-----|-----|--------|
 | ログイン後も Cookie が見えない | `HttpOnly` が正しく設定されている | 正常な動作。DevTools では見えません |
-| ログイン後もリダイレクトされる | Session が検証されていない | Middleware の session 検証ロジックを確認 |
+| ログイン後もリダイレクトされる | Session が検証されていない | Proxy の session 検証ロジックを確認 |
 | CORS エラーが出る | Cross-origin リクエストで credentials が不足 | `credentials: 'include'` を fetch に追加 |
 | Session が直後に失効する | 有効期限が短すぎる | `maxAge` の値を確認（ミリ秒） |

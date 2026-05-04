@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { LogoutButton } from '../components/auth/logout-button';
 
 export default async function HomePage() {
   const cookieStore = await cookies();
@@ -20,6 +21,11 @@ export default async function HomePage() {
   return (
     <main className="app-shell px-4 py-6">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-md flex-col gap-4">
+        <header className="flex items-center justify-between">
+          <span className="text-lg font-semibold">Crow</span>
+          <LogoutButton />
+        </header>
+
         <section className="card border border-base-200 bg-base-100 shadow-xl">
           <div className="card-body gap-3">
             <div>

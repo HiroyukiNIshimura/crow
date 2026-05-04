@@ -141,6 +141,27 @@ export class AuthService implements OnModuleInit {
         });
     }
 
+    /** 指定ユーザーのアクティブなセッション一覧を返す */
+    async listSessions(userId: string) {
+        return this.sessionStore.listByUser(userId);
+    }
+
+    /**
+     * 指定 ID のセッションを無効化する。
+     * userId 照合は SessionStoreService 側で行う。
+     */
+    async revokeSessionById(sessionId: string, userId: string, metadata?: RequestMetadata) {
+        await this.sessionStore.revokeById(sessionId, userId);
+
+        await this.createAuditLog({
+            eventType: 'SESSION_REVOKED',
+            userId,
+            ipAddress: metadata?.ipAddress,
+            userAgent: metadata?.userAgent,
+            metadata: { sessionId },
+        });
+    }
+
     async ensureDemoUser() {
         const demoEmail = (process.env.DEMO_USER_EMAIL ?? 'admin@example.com').trim().toLowerCase();
         const demoPassword = process.env.DEMO_USER_PASSWORD ?? 'password123!';

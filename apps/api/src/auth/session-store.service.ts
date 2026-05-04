@@ -115,6 +115,45 @@ export class SessionStoreService {
         });
     }
 
+    /** 指定ユーザーのアクティブなセッション一覧を返す（トークンハッシュは含まない） */
+    async listByUser(userId: string) {
+        const now = new Date();
+
+        return this.prisma.session.findMany({
+            where: {
+                userId,
+                revokedAt: null,
+                expiresAt: { gt: now },
+            },
+            orderBy: { lastSeenAt: 'desc' },
+            select: {
+                id: true,
+                createdAt: true,
+                lastSeenAt: true,
+                expiresAt: true,
+                ipAddress: true,
+                userAgent: true,
+            },
+        });
+    }
+
+    /**
+     * 指定 ID のセッションを無効化する。
+     * userId を照合して自分のセッション以外は無効化できない。
+     */
+    async revokeById(id: string, userId: string) {
+        await this.prisma.session.updateMany({
+            where: {
+                id,
+                userId,
+                revokedAt: null,
+            },
+            data: {
+                revokedAt: new Date(),
+            },
+        });
+    }
+
     private hashToken(token: string) {
         return createHash('sha256').update(token).digest('hex');
     }

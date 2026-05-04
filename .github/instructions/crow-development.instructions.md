@@ -217,12 +217,12 @@ apps/web/
 ├── app/               # App Router (Next.js 13+)
 ├── components/        # React コンポーネント
 │   └── auth/         # 認証関連
-└── middleware.ts     # 全体ミドルウェア
+└── proxy.ts          # 全体プロキシ
 ```
 
 #### セッション・ルート保護
 
-- `middleware.ts` で unauthenticated user を `/login` へリダイレクト
+- `proxy.ts` で unauthenticated user を `/login` へリダイレクト
 - Server Components を積極的に使用（セッション検証に有利）
 - ログイン状態をプロップ・コンテキストで管理
 

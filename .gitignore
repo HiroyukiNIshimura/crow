@@ -5,6 +5,7 @@ coverage
 .DS_Store
 *.log
 .turbo
+*.tsbuildinfo
 
 # environment files
 .env
