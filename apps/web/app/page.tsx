@@ -472,7 +472,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                         <article key={log.id} className="rounded-md border border-base-200 p-3">
                                             <div className="mb-2 flex items-start justify-between gap-3">
                                                 <div className="text-xs font-medium text-base-content/50">
-                                                    {toClockLabel(log.workDate)} 記録
+                                                    {toClockLabel(log.createdAt)} 記録
                                                 </div>
                                                 <span className="badge badge-ghost shrink-0">
                                                     {log.durationMinutes
