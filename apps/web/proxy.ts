@@ -4,11 +4,8 @@ import { NextResponse } from 'next/server';
 const PUBLIC_PATHS = ['/login'];
 
 async function verifySession(cookieName: string, token: string) {
-    const apiUrl = process.env.API_URL_INTERNAL ?? process.env.NEXT_PUBLIC_API_URL;
-
-    if (!apiUrl) {
-        return false;
-    }
+    const apiUrl =
+        process.env.API_URL_INTERNAL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
     try {
         const response = await fetch(`${apiUrl}/auth/session`, {
@@ -32,7 +29,8 @@ export async function proxy(request: NextRequest) {
     if (
         pathname.startsWith('/_next') ||
         pathname.startsWith('/favicon') ||
-        pathname.startsWith('/images')
+        pathname.startsWith('/images') ||
+        pathname === '/theme-init.js'
     ) {
         return NextResponse.next();
     }

@@ -11,10 +11,6 @@ export type LoginActionState = {
     error: string | null;
 };
 
-export const initialLoginActionState: LoginActionState = {
-    error: null,
-};
-
 function extractMessage(payload: unknown): string | undefined {
     if (!payload || typeof payload !== 'object') {
         return undefined;
