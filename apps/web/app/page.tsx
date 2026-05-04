@@ -307,7 +307,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                     ←
                                 </Link>
                                 <Link
-                                    href={`/?month=${monthText}&date=${createDateText(year, month, 1)}`}
+                                    href={`/?month=${todayDate.slice(0, 7)}&date=${todayDate}`}
                                     className="btn join-item btn-sm btn-outline"
                                 >
                                     今月
