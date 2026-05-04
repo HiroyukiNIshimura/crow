@@ -33,7 +33,6 @@ export function LogoutButton() {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
                     ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
                 },
             });
