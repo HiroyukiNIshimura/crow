@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/login'];
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 async function verifySession(cookieName: string, token: string) {
     const apiUrl =
@@ -38,12 +39,17 @@ export async function proxy(request: NextRequest) {
     const cookieName = process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME ?? 'crow_session';
     const sessionToken = request.cookies.get(cookieName)?.value;
     const hasSession = Boolean(sessionToken);
+    const shouldVerifyWithApi = SAFE_METHODS.has(request.method);
     const isPublicPath = PUBLIC_PATHS.some(
         (path) => pathname === path || pathname.startsWith(`${path}/`),
     );
 
     const hasValidSession =
-        hasSession && sessionToken ? await verifySession(cookieName, sessionToken) : false;
+        hasSession && sessionToken
+            ? shouldVerifyWithApi
+                ? await verifySession(cookieName, sessionToken)
+                : true
+            : false;
 
     // 未ログインで保護ページにアクセスした場合のみ /login へ遷移
     if ((!hasSession || !hasValidSession) && !isPublicPath) {

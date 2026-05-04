@@ -1,11 +1,12 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import { type LoginActionState, loginAction } from '../../app/login/actions';
 
 const showDemoCredentials = process.env.NODE_ENV !== 'production';
-const initialLoginActionState: LoginActionState = { error: null };
+const initialLoginActionState: LoginActionState = { error: null, success: false };
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -18,7 +19,17 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
+    const router = useRouter();
     const [state, formAction] = useActionState(loginAction, initialLoginActionState);
+
+    useEffect(() => {
+        if (!state.success) {
+            return;
+        }
+
+        router.replace('/');
+        router.refresh();
+    }, [router, state.success]);
 
     return (
         <section className="card border border-base-200 bg-base-100 shadow-2xl">

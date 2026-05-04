@@ -1,7 +1,6 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { relaySetCookieHeaders } from '../actions/cookie-relay';
 
 const defaultApiUrl =
@@ -9,6 +8,7 @@ const defaultApiUrl =
 
 export type LoginActionState = {
     error: string | null;
+    success: boolean;
 };
 
 function extractMessage(payload: unknown): string | undefined {
@@ -39,6 +39,7 @@ export async function loginAction(
     if (!email || !password) {
         return {
             error: 'メールアドレスとパスワードを入力してください。',
+            success: false,
         };
     }
 
@@ -59,17 +60,20 @@ export async function loginAction(
             if (response.status === 401) {
                 return {
                     error: message ?? 'メールアドレスまたはパスワードが正しくありません。',
+                    success: false,
                 };
             }
 
             if (response.status >= 500) {
                 return {
                     error: 'サーバーでエラーが発生しました。時間をおいて再度お試しください。',
+                    success: false,
                 };
             }
 
             return {
                 error: message ?? 'ログインに失敗しました。入力内容をご確認ください。',
+                success: false,
             };
         }
 
@@ -81,8 +85,12 @@ export async function loginAction(
                 submitError instanceof TypeError
                     ? 'ネットワークに接続できませんでした。接続状況を確認してください。'
                     : '不明なエラーが発生しました。',
+            success: false,
         };
     }
 
-    redirect('/');
+    return {
+        error: null,
+        success: true,
+    };
 }

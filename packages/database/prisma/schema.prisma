@@ -29,6 +29,7 @@ model User {
   updatedAt      DateTime       @updatedAt
   sessions       Session[]
   workLogs       WorkLog[]
+  dailyNotes     DailyNote[]
   authAuditLogs  AuthAuditLog[]
 
   @@map("users")
@@ -81,4 +82,18 @@ model WorkLog {
 
   @@index([userId, workDate])
   @@map("work_logs")
+}
+
+model DailyNote {
+  id        String   @id @default(cuid())
+  userId    String
+  workDate  DateTime
+  note      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workDate])
+  @@index([userId])
+  @@map("daily_notes")
 }

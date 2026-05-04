@@ -15,6 +15,9 @@ async function bootstrap() {
     const cookieSecret = process.env.SESSION_SECRET ?? 'replace-with-a-long-random-secret';
     const frontendOrigin = process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000';
     const port = Number(process.env.API_PORT ?? 3001);
+    const isProduction = process.env.NODE_ENV === 'production';
+    const rateLimitMax = Number(process.env.RATE_LIMIT_MAX ?? (isProduction ? 120 : 1000));
+    const rateLimitWindow = process.env.RATE_LIMIT_WINDOW ?? '1 minute';
 
     await app.register(cookie, { secret: cookieSecret });
     await app.register(cors, {
@@ -22,8 +25,15 @@ async function bootstrap() {
         credentials: true,
     });
     await app.register(rateLimit, {
-        max: 20,
-        timeWindow: '1 minute',
+        max: rateLimitMax,
+        timeWindow: rateLimitWindow,
+        // 開発時は localhost からの操作をレート制限対象外にして、
+        // Server Action 経由の複数リクエストで 429 が出ないようにする。
+        ...(isProduction
+            ? {}
+            : {
+                  allowList: ['127.0.0.1', '::1', 'localhost'],
+              }),
     });
 
     app.useGlobalPipes(
