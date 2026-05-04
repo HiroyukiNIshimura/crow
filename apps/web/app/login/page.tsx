@@ -7,14 +7,14 @@ export default function LoginPage() {
             <div className="w-full max-w-md space-y-5">
                 <div className="space-y-2 text-center">
                     <div className="flex justify-center">
-                        <div className="rounded-full overflow-hidden w-20 h-20">
+                        <div className="w-28 h-28">
                             <Image
                                 src="/images/logo.webp"
                                 alt="Crow"
-                                width={80}
-                                height={80}
+                                width={112}
+                                height={112}
                                 priority
-                                className="scale-125"
+                                unoptimized
                             />
                         </div>
                     </div>
