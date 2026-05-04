@@ -23,9 +23,10 @@ export class AuthController {
         @Req() request: FastifyRequest,
         @Res({ passthrough: true }) reply: FastifyReply,
     ) {
+        const userAgent = this.resolveUserAgent(request.headers['user-agent']);
         const result = await this.authService.login(body.email, body.password, {
             ipAddress: request.ip,
-            userAgent: request.headers['user-agent'],
+            userAgent,
         });
 
         const cookieName = process.env.SESSION_COOKIE_NAME ?? 'crow_session';
@@ -42,14 +43,13 @@ export class AuthController {
         return {
             user: result.user,
             message: 'ログインしました。',
-            mode: 'development-stub',
         };
     }
 
     @Get('session')
     async getSession(@Req() request: FastifyRequest) {
         const cookieName = process.env.SESSION_COOKIE_NAME ?? 'crow_session';
-        const session = this.authService.getSession(request.cookies[cookieName]);
+        const session = await this.authService.getSession(request.cookies[cookieName]);
 
         if (!session) {
             throw new UnauthorizedException('有効なセッションがありません。');
@@ -62,7 +62,12 @@ export class AuthController {
     @HttpCode(200)
     async logout(@Req() request: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
         const cookieName = process.env.SESSION_COOKIE_NAME ?? 'crow_session';
-        this.authService.logout(request.cookies[cookieName]);
+        const userAgent = this.resolveUserAgent(request.headers['user-agent']);
+
+        await this.authService.logout(request.cookies[cookieName], {
+            ipAddress: request.ip,
+            userAgent,
+        });
 
         reply.clearCookie(cookieName, {
             path: '/',
@@ -71,5 +76,13 @@ export class AuthController {
         });
 
         return { message: 'ログアウトしました。' };
+    }
+
+    private resolveUserAgent(value: string | string[] | undefined) {
+        if (Array.isArray(value)) {
+            return value.join(', ');
+        }
+
+        return value;
     }
 }

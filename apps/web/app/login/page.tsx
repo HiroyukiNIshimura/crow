@@ -8,7 +8,10 @@ export default function LoginPage() {
           <div className="badge badge-primary badge-outline">Crow</div>
           <h1 className="text-3xl font-bold tracking-tight">ログイン</h1>
           <p className="text-sm text-base-content/60">
-            その日の作業を、すばやく・気軽に・あとで見返しやすく。
+            作業記録を、安全に・すばやく始めましょう。
+          </p>
+          <p className="text-xs text-base-content/50">
+            パスワード再設定は現在準備中です。問題がある場合は管理者にお問い合わせください。
           </p>
         </div>
 
