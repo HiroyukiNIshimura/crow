@@ -209,6 +209,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     const dateParam = getSingleParam(rawSearchParams.date);
     const errorParam = getSingleParam(rawSearchParams.error);
 
+    if (!monthParam && !dateParam && !errorParam) {
+        redirect(`/?month=${todayDate.slice(0, 7)}&date=${todayDate}`);
+    }
+
     const { year, month, monthText } = parseMonthParam(monthParam, todayDate);
     const selectedDate = ensureSelectedDate(year, month, dateParam);
 
@@ -274,9 +278,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         <Link href={`/?month=${todayDate.slice(0, 7)}&date=${todayDate}`} className="btn btn-ghost btn-sm">
                             今日へ
                         </Link>
-                        <button type="button" className="btn btn-primary btn-sm" disabled>
-                            記録を追加（準備中）
-                        </button>
                         <ThemeToggle />
                         <LogoutButton />
                     </div>
