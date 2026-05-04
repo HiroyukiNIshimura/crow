@@ -67,7 +67,9 @@ export function LoginForm() {
                         </div>
                     ) : null}
 
-                    <SubmitButton />
+                    <div className="pt-2 sm:pt-3">
+                        <SubmitButton />
+                    </div>
                 </form>
             </div>
         </section>
