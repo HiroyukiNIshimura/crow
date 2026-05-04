@@ -2,7 +2,9 @@
 
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { initialLogoutActionState, logoutAction } from '../../app/actions/logout-action';
+import { type LogoutActionState, logoutAction } from '../../app/actions/logout-action';
+
+const initialLogoutActionState: LogoutActionState = { error: null };
 
 function SubmitButton() {
     const { pending } = useFormStatus();

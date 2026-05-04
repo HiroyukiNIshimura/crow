@@ -11,10 +11,6 @@ export type LogoutActionState = {
     error: string | null;
 };
 
-export const initialLogoutActionState: LogoutActionState = {
-    error: null,
-};
-
 function buildCookieHeader(cookiesToForward: Array<{ name: string; value: string }>) {
     return cookiesToForward
         .map(({ name, value }) => `${name}=${encodeURIComponent(value)}`)
