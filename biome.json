@@ -69,9 +69,7 @@
     },
     "overrides": [
         {
-            "includes": [
-                "apps/web/**"
-            ],
+            "includes": ["apps/web/**"],
             "linter": {
                 "rules": {
                     "correctness": {
@@ -81,9 +79,7 @@
             }
         },
         {
-            "includes": [
-                "apps/api/**"
-            ],
+            "includes": ["apps/api/**"],
             "linter": {
                 "rules": {
                     "correctness": {
@@ -96,9 +92,7 @@
             }
         },
         {
-            "includes": [
-                "**/*.config.{ts,js,mjs,cjs}"
-            ],
+            "includes": ["**/*.config.{ts,js,mjs,cjs}"],
             "linter": {
                 "rules": {
                     "correctness": {

@@ -10,7 +10,12 @@ function SubmitButton() {
     const { pending } = useFormStatus();
 
     return (
-        <button type="submit" className="btn btn-ghost btn-sm" disabled={pending} aria-busy={pending}>
+        <button
+            type="submit"
+            className="btn btn-ghost btn-sm"
+            disabled={pending}
+            aria-busy={pending}
+        >
             {pending ? (
                 <span className="loading loading-spinner loading-xs" aria-hidden="true" />
             ) : null}

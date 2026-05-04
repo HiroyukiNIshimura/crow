@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { LogoutButton } from '../components/auth/logout-button';
 import { ThemeToggle } from '../components/theme/theme-toggle';
@@ -104,7 +105,15 @@ export default async function HomePage() {
                 <header className="flex flex-col gap-4 border-b border-base-300/80 bg-base-100/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <div className="flex items-center gap-3">
-                            <span className="text-xl font-semibold tracking-tight">Crow</span>
+                            <div className="rounded-full overflow-hidden w-14 h-14">
+                                <Image
+                                    src="/images/logo.webp"
+                                    alt="Crow"
+                                    width={56}
+                                    height={56}
+                                    className="scale-125"
+                                />
+                            </div>
                             <span className="badge badge-primary badge-outline">作業記録</span>
                         </div>
                         <p className="mt-1 text-sm text-base-content/60">
