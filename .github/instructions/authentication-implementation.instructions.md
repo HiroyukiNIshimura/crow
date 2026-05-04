@@ -341,6 +341,13 @@ export class AuthModule {}
 
 ## Next.js 実装パターン
 
+### 0. API 通信の実装ルール（必須）
+
+- `apps/web` の Client Component から外部 API へ直接 `fetch` しない
+- 認証関連の API 呼び出しは Server Action（または Route Handler）経由に統一する
+- Cookie ベース認証では、API から返された `Set-Cookie` を Next.js 側で中継してブラウザへ反映する
+- CSRF 対応が必要なエンドポイントは、Server Action 側で Cookie と `X-CSRF-Token` を整合させる
+
 ### 1. Proxy（全体ルート保護）
 
 `apps/web/proxy.ts`

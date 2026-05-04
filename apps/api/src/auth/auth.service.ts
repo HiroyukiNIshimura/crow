@@ -37,6 +37,10 @@ export class AuthService implements OnModuleInit {
     ) {}
 
     async onModuleInit() {
+        if (!this.isDemoUserProvisioningEnabled()) {
+            return;
+        }
+
         await this.ensureDemoUser();
     }
 
@@ -189,6 +193,23 @@ export class AuthService implements OnModuleInit {
                 isActive: true,
             },
         });
+    }
+
+    private isDemoUserProvisioningEnabled() {
+        const env = process.env.NODE_ENV;
+        const flag = process.env.DEMO_USER_ENABLED;
+
+        // 明示指定がある場合はそれを最優先
+        if (flag === 'true') {
+            return true;
+        }
+
+        if (flag === 'false') {
+            return false;
+        }
+
+        // 既定: 本番では無効、非本番では有効
+        return env !== 'production';
     }
 
     private assertLoginAttemptAllowed(email: string) {

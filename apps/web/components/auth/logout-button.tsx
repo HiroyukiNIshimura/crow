@@ -1,76 +1,33 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { initialLogoutActionState, logoutAction } from '../../app/actions/logout-action';
 
-/** document.cookie から指定名の Cookie 値を取得する */
-function getCookieValue(name: string): string | undefined {
-    const prefix = `${name}=`;
-    for (const part of document.cookie.split(';')) {
-        const trimmed = part.trim();
-        if (trimmed.startsWith(prefix)) {
-            return trimmed.slice(prefix.length);
-        }
-    }
-    return undefined;
+function SubmitButton() {
+    const { pending } = useFormStatus();
+
+    return (
+        <button type="submit" className="btn btn-ghost btn-sm" disabled={pending} aria-busy={pending}>
+            {pending ? (
+                <span className="loading loading-spinner loading-xs" aria-hidden="true" />
+            ) : null}
+            ログアウト
+        </button>
+    );
 }
 
 export function LogoutButton() {
-    const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    async function handleLogout() {
-        setLoading(true);
-        setError(null);
-
-        const csrfCookieName = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME ?? 'csrf_token';
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
-        try {
-            const csrfToken = getCookieValue(csrfCookieName);
-            const res = await fetch(`${apiUrl}/auth/logout`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-                },
-            });
-
-            if (!res.ok) {
-                const body = await res.json().catch(() => ({}));
-                setError((body as { message?: string }).message ?? 'ログアウトに失敗しました。');
-                return;
-            }
-
-            router.push('/login');
-            router.refresh();
-        } catch {
-            setError('ネットワークエラーが発生しました。');
-        } finally {
-            setLoading(false);
-        }
-    }
+    const [state, formAction] = useActionState(logoutAction, initialLogoutActionState);
 
     return (
-        <div>
-            <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={handleLogout}
-                disabled={loading}
-                aria-busy={loading}
-            >
-                {loading ? (
-                    <span className="loading loading-spinner loading-xs" aria-hidden="true" />
-                ) : null}
-                ログアウト
-            </button>
-            {error ? (
+        <form action={formAction}>
+            <SubmitButton />
+            {state.error ? (
                 <p role="alert" className="mt-1 text-xs text-error">
-                    {error}
+                    {state.error}
                 </p>
             ) : null}
-        </div>
+        </form>
     );
 }
