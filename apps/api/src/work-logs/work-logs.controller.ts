@@ -18,6 +18,7 @@ import { SessionGuard } from '../auth/session.guard';
 import { CreateWorkLogDto } from './dto/create-work-log.dto';
 import { DayQueryDto } from './dto/day-query.dto';
 import { MonthQueryDto } from './dto/month-query.dto';
+import { UpdateDayNoteDto } from './dto/update-day-note.dto';
 import { UpdateWorkLogDto } from './dto/update-work-log.dto';
 import { WorkLogsService } from './work-logs.service';
 
@@ -67,6 +68,19 @@ export class WorkLogsController {
         }
 
         return this.workLogsService.update(user.id, id, body);
+    }
+
+    @Patch('day-note')
+    @UseGuards(CsrfGuard)
+    async updateDayNote(
+        @CurrentUser() user: FastifyRequest['user'],
+        @Body() body: UpdateDayNoteDto,
+    ) {
+        if (!user) {
+            throw new UnauthorizedException('認証が必要です。');
+        }
+
+        return this.workLogsService.updateDayNote(user.id, body.date, body.note);
     }
 
     @Delete(':id')

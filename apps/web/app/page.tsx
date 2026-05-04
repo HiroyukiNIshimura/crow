@@ -9,6 +9,8 @@ import {
     deleteWorkLogAction,
     getDayLogs,
     getMonthLogs,
+    updateDayNoteAction,
+    updateWorkLogAction,
 } from './actions/work-log-actions';
 
 type HomePageProps = {
@@ -413,7 +415,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                 <span className="badge badge-primary">{selectedDayHours}</span>
                             </div>
                             <p className="mt-3 text-sm leading-6 text-base-content/65">
-                                右ペインで選択日の記録を確認できます。記録の追加・編集機能は次段階で実装します。
+                                右ペインで選択日の記録を編集し、1日の要約メモを保存できます。
                             </p>
                         </div>
 
@@ -468,14 +470,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                 ) : (
                                     dayData?.logs.map((log) => (
                                         <article key={log.id} className="rounded-md border border-base-200 p-3">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div>
-                                                    <p className="text-xs font-medium text-base-content/50">
-                                                        {toClockLabel(log.workDate)} 記録
-                                                    </p>
-                                                    <h4 className="mt-1 font-semibold leading-snug">
-                                                        {log.title}
-                                                    </h4>
+                                            <div className="mb-2 flex items-start justify-between gap-3">
+                                                <div className="text-xs font-medium text-base-content/50">
+                                                    {toClockLabel(log.workDate)} 記録
                                                 </div>
                                                 <span className="badge badge-ghost shrink-0">
                                                     {log.durationMinutes
@@ -483,42 +480,78 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                                         : '時間未設定'}
                                                 </span>
                                             </div>
-                                            {log.note ? (
-                                                <p className="mt-2 text-sm leading-6 text-base-content/65">
-                                                    {log.note}
-                                                </p>
-                                            ) : null}
 
-                                            <form action={deleteWorkLogAction} className="mt-2">
+                                            <form action={updateWorkLogAction} className="space-y-2">
                                                 <input type="hidden" name="month" value={monthText} />
                                                 <input type="hidden" name="date" value={selectedDate} />
                                                 <input type="hidden" name="logId" value={log.id} />
-                                                <button type="submit" className="btn btn-ghost btn-xs text-error">
-                                                    削除
-                                                </button>
+
+                                                <input
+                                                    className="input input-bordered input-sm w-full"
+                                                    type="text"
+                                                    name="title"
+                                                    defaultValue={log.title}
+                                                    required
+                                                />
+                                                <input
+                                                    className="input input-bordered input-sm w-full"
+                                                    type="number"
+                                                    name="durationMinutes"
+                                                    defaultValue={log.durationMinutes ?? ''}
+                                                    placeholder="作業時間（分）"
+                                                    min={0}
+                                                    max={1440}
+                                                    step={1}
+                                                />
+                                                <textarea
+                                                    className="textarea textarea-bordered textarea-sm min-h-20 resize-none"
+                                                    name="note"
+                                                    defaultValue={log.note ?? ''}
+                                                    placeholder="補足メモ（任意）"
+                                                />
+
+                                                <div className="flex items-center justify-between">
+                                                    <button type="submit" className="btn btn-outline btn-xs">
+                                                        更新
+                                                    </button>
+
+                                                    <button
+                                                        type="submit"
+                                                        formAction={deleteWorkLogAction}
+                                                        className="btn btn-ghost btn-xs text-error"
+                                                    >
+                                                        削除
+                                                    </button>
+                                                </div>
                                             </form>
+
                                         </article>
                                     ))
                                 )}
                             </div>
 
-                            <div className="rounded-md border border-dashed border-base-300 p-3">
-                                <label className="form-control gap-2">
+                            <form action={updateDayNoteAction} className="rounded-md border border-dashed border-base-300 p-3">
+                                <input type="hidden" name="month" value={monthText} />
+                                <input type="hidden" name="date" value={selectedDate} />
+
+                                <label className="form-control gap-2 mb-2">
                                     <span className="text-sm font-semibold text-base-content/70">
-                                        1日のメモ（表示のみ）
+                                        1日のメモ
                                     </span>
                                     <textarea
                                         className="textarea textarea-bordered min-h-28 resize-none"
-                                        value={
-                                            dayData?.logs
-                                                .map((log) => log.note?.trim())
-                                                .filter((note): note is string => Boolean(note))
-                                                .join('\n\n') ?? ''
-                                        }
-                                        readOnly
+                                        name="dayNote"
+                                        defaultValue={dayData?.dayNote ?? ''}
+                                        placeholder="この日の全体メモを入力"
                                     />
                                 </label>
-                            </div>
+
+                                <div className="flex justify-end">
+                                    <button type="submit" className="btn btn-primary btn-sm">
+                                        1日のメモを保存
+                                    </button>
+                                </div>
+                            </form>
 
                         </div>
                     </aside>

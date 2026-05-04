@@ -3,6 +3,7 @@ export type {
     User,
     Session,
     WorkLog,
+    DailyNote,
     AuthAuditLog,
     UserRole,
     AuthProvider,

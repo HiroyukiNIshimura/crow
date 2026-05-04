@@ -14,6 +14,14 @@ type MonthSummary = {
 export class WorkLogsService {
     constructor(private readonly prisma: PrismaService) {}
 
+    private buildDayRange(dateText: string) {
+        const [year, month, day] = dateText.split('-').map(Number);
+        const start = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        const end = new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0));
+
+        return { end, start };
+    }
+
     async getMonth(userId: string, year: number, month: number) {
         const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
         const end = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
@@ -34,6 +42,20 @@ export class WorkLogsService {
             },
             orderBy: {
                 workDate: 'asc',
+            },
+        });
+
+        const dailyNotes = await this.prisma.dailyNote.findMany({
+            where: {
+                userId,
+                workDate: {
+                    gte: start,
+                    lt: end,
+                },
+            },
+            select: {
+                workDate: true,
+                note: true,
             },
         });
 
@@ -58,6 +80,22 @@ export class WorkLogsService {
             prev.totalDurationMinutes += log.durationMinutes ?? 0;
             prev.hasMemo ||= Boolean(log.note?.trim());
 
+            byDate.set(date, prev);
+        }
+
+        for (const dailyNote of dailyNotes) {
+            if (!dailyNote.note.trim()) {
+                continue;
+            }
+
+            const date = dailyNote.workDate.toISOString().slice(0, 10);
+            const prev = byDate.get(date) ?? {
+                logCount: 0,
+                totalDurationMinutes: 0,
+                hasMemo: false,
+            };
+
+            prev.hasMemo = true;
             byDate.set(date, prev);
         }
 
@@ -90,9 +128,7 @@ export class WorkLogsService {
     }
 
     async getDay(userId: string, dateText: string) {
-        const [year, month, day] = dateText.split('-').map(Number);
-        const start = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-        const end = new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0));
+        const { start, end } = this.buildDayRange(dateText);
 
         const logs = await this.prisma.workLog.findMany({
             where: {
@@ -116,8 +152,21 @@ export class WorkLogsService {
 
         const totalDurationMinutes = logs.reduce((acc, log) => acc + (log.durationMinutes ?? 0), 0);
 
+        const dayNoteRecord = await this.prisma.dailyNote.findUnique({
+            where: {
+                userId_workDate: {
+                    userId,
+                    workDate: start,
+                },
+            },
+            select: {
+                note: true,
+            },
+        });
+
         return {
             date: dateText,
+            dayNote: dayNoteRecord?.note ?? null,
             totalDurationMinutes,
             logs,
         };
@@ -204,5 +253,50 @@ export class WorkLogsService {
         if (result.count === 0) {
             throw new NotFoundException('作業ログが見つかりません。');
         }
+    }
+
+    async updateDayNote(userId: string, dateText: string, note?: string) {
+        const { start } = this.buildDayRange(dateText);
+        const normalized = note?.trim() ?? '';
+
+        if (!normalized) {
+            await this.prisma.dailyNote.deleteMany({
+                where: {
+                    userId,
+                    workDate: start,
+                },
+            });
+
+            return {
+                date: dateText,
+                note: null,
+            };
+        }
+
+        const saved = await this.prisma.dailyNote.upsert({
+            where: {
+                userId_workDate: {
+                    userId,
+                    workDate: start,
+                },
+            },
+            create: {
+                userId,
+                workDate: start,
+                note: normalized,
+            },
+            update: {
+                note: normalized,
+            },
+            select: {
+                note: true,
+                workDate: true,
+            },
+        });
+
+        return {
+            date: saved.workDate.toISOString().slice(0, 10),
+            note: saved.note,
+        };
     }
 }

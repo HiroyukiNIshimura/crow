@@ -25,6 +25,11 @@ async function verifySession(cookieName: string, token: string) {
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
+    const isServerActionRequest = request.headers.has('next-action');
+
+    if (isServerActionRequest) {
+        return NextResponse.next();
+    }
 
     // 静的アセットは認証判定を通さずにそのまま返す
     if (
