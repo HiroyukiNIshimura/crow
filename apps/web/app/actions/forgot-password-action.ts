@@ -28,7 +28,10 @@ export async function forgotPasswordAction(
     const parsed = schema.safeParse({ email: formData.get('email') });
 
     if (!parsed.success) {
-        return { error: parsed.error.issues[0]?.message ?? '入力内容をご確認ください。', success: false };
+        return {
+            error: parsed.error.issues[0]?.message ?? '入力内容をご確認ください。',
+            success: false,
+        };
     }
 
     try {

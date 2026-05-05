@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
+import { MailModule } from '../mail/mail.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { CsrfGuard } from './csrf.guard';
 import { PrismaService } from './prisma.service';
 import { SessionGuard } from './session.guard';
 import { SessionStoreService } from './session-store.service';
-import { MailModule } from '../mail/mail.module';
 
 @Module({
     imports: [MailModule],

@@ -5,26 +5,28 @@ import { z } from 'zod';
 const defaultApiUrl =
     process.env.API_URL_INTERNAL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-const schema = z.object({
-    token: z.preprocess(
-        (value) => (typeof value === 'string' ? value : ''),
-        z.string().min(1, 'トークンが見つかりません。'),
-    ),
-    newPassword: z.preprocess(
-        (value) => (typeof value === 'string' ? value : ''),
-        z
-            .string()
-            .min(8, 'パスワードは8文字以上で入力してください。')
-            .max(255, 'パスワードは255文字以内で入力してください。'),
-    ),
-    confirmPassword: z.preprocess(
-        (value) => (typeof value === 'string' ? value : ''),
-        z.string().min(1, '確認用パスワードを入力してください。'),
-    ),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'パスワードが一致しません。',
-    path: ['confirmPassword'],
-});
+const schema = z
+    .object({
+        token: z.preprocess(
+            (value) => (typeof value === 'string' ? value : ''),
+            z.string().min(1, 'トークンが見つかりません。'),
+        ),
+        newPassword: z.preprocess(
+            (value) => (typeof value === 'string' ? value : ''),
+            z
+                .string()
+                .min(8, 'パスワードは8文字以上で入力してください。')
+                .max(255, 'パスワードは255文字以内で入力してください。'),
+        ),
+        confirmPassword: z.preprocess(
+            (value) => (typeof value === 'string' ? value : ''),
+            z.string().min(1, '確認用パスワードを入力してください。'),
+        ),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+        message: 'パスワードが一致しません。',
+        path: ['confirmPassword'],
+    });
 
 export type ResetPasswordActionState = {
     error: string | null;
@@ -42,7 +44,10 @@ export async function resetPasswordAction(
     });
 
     if (!parsed.success) {
-        return { error: parsed.error.issues[0]?.message ?? '入力内容をご確認ください。', success: false };
+        return {
+            error: parsed.error.issues[0]?.message ?? '入力内容をご確認ください。',
+            success: false,
+        };
     }
 
     try {

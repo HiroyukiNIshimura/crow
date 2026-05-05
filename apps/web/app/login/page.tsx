@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import { LoginForm } from '../../components/auth/login-form';
 
 type Props = {
@@ -38,13 +38,17 @@ export default async function LoginPage({ searchParams }: Props) {
 
                 {invited === '1' ? (
                     <div className="alert alert-success py-3 text-sm" role="status">
-                        <span>アカウントを作成しました。メールアドレスとパスワードでログインしてください。</span>
+                        <span>
+                            アカウントを作成しました。メールアドレスとパスワードでログインしてください。
+                        </span>
                     </div>
                 ) : null}
 
                 {reset === '1' ? (
                     <div className="alert alert-success py-3 text-sm" role="status">
-                        <span>パスワードを変更しました。新しいパスワードでログインしてください。</span>
+                        <span>
+                            パスワードを変更しました。新しいパスワードでログインしてください。
+                        </span>
                     </div>
                 ) : null}
 

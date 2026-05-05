@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
     Body,
     Controller,
@@ -11,14 +12,13 @@ import {
     UnauthorizedException,
     UseGuards,
 } from '@nestjs/common';
-import { randomBytes } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { LoginDto } from './dto/login.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthService } from './auth.service';
 import { CsrfGuard } from './csrf.guard';
 import { CurrentUser } from './current-user.decorator';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { LoginDto } from './dto/login.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SessionGuard } from './session.guard';
 
 @Controller('auth')
@@ -135,25 +135,21 @@ export class AuthController {
 
     @Post('forgot-password')
     @HttpCode(200)
-    async forgotPassword(
-        @Body() body: ForgotPasswordDto,
-        @Req() request: FastifyRequest,
-    ) {
+    async forgotPassword(@Body() body: ForgotPasswordDto, @Req() request: FastifyRequest) {
         const userAgent = this.resolveUserAgent(request.headers['user-agent']);
         await this.authService.requestPasswordReset(body.email, {
             ipAddress: request.ip,
             userAgent,
         });
         // ユーザー存在有無にかかわらず同一レスポンスを返す
-        return { message: 'メールアドレスが登録されている場合、パスワード再設定のメールを送信しました。' };
+        return {
+            message: 'メールアドレスが登録されている場合、パスワード再設定のメールを送信しました。',
+        };
     }
 
     @Post('reset-password')
     @HttpCode(200)
-    async resetPassword(
-        @Body() body: ResetPasswordDto,
-        @Req() request: FastifyRequest,
-    ) {
+    async resetPassword(@Body() body: ResetPasswordDto, @Req() request: FastifyRequest) {
         const userAgent = this.resolveUserAgent(request.headers['user-agent']);
         await this.authService.resetPassword(body.token, body.newPassword, {
             ipAddress: request.ip,

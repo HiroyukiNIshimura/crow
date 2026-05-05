@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+import type { Prisma } from '@crow/database';
 import {
     BadRequestException,
     HttpException,
@@ -9,11 +10,10 @@ import {
     type OnModuleInit,
     UnauthorizedException,
 } from '@nestjs/common';
-import type { Prisma } from '@crow/database';
 import * as argon2 from 'argon2';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from './prisma.service';
 import { SessionStoreService } from './session-store.service';
-import { MailService } from '../mail/mail.service';
 
 type SafeUser = {
     id: string;
@@ -180,7 +180,9 @@ export class AuthService implements OnModuleInit {
 
         // タイミング攻撃防止: ユーザーが存在しない場合も同一レスポンスを返す
         if (!user?.isActive) {
-            this.logger.log(`Password reset requested for unknown/inactive email: ${normalizedEmail}`);
+            this.logger.log(
+                `Password reset requested for unknown/inactive email: ${normalizedEmail}`,
+            );
             return;
         }
 
@@ -235,7 +237,9 @@ export class AuthService implements OnModuleInit {
         }
 
         if (record.expiresAt < new Date()) {
-            throw new BadRequestException('リセットリンクの有効期限が切れています。再度パスワード再設定をお試しください。');
+            throw new BadRequestException(
+                'リセットリンクの有効期限が切れています。再度パスワード再設定をお試しください。',
+            );
         }
 
         if (!record.user.isActive) {
@@ -284,7 +288,14 @@ export class AuthService implements OnModuleInit {
 
         await this.prisma.user.upsert({
             where: { email },
-            create: { email, displayName, role: 'admin', passwordHash, provider: 'local', isActive: true },
+            create: {
+                email,
+                displayName,
+                role: 'admin',
+                passwordHash,
+                provider: 'local',
+                isActive: true,
+            },
             update: { displayName, role: 'admin', passwordHash, provider: 'local', isActive: true },
         });
     }
