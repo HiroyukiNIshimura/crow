@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { type LoginActionState, loginAction } from '../../app/login/actions';
+import { type LoginActionState, loginAction } from '../../app/actions/login-actions';
 
 const showDemoCredentials = process.env.NODE_ENV !== 'production';
 const initialLoginActionState: LoginActionState = { error: null, success: false };

@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { relaySetCookieHeaders } from '../actions/cookie-relay';
+import { relaySetCookieHeaders } from './cookie-relay';
 
 const defaultApiUrl =
     process.env.API_URL_INTERNAL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
