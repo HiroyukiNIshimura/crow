@@ -24,16 +24,19 @@ crow (root)
 
 - **npm workspaces** を使用：`apps/*`, `packages/*` がワークスペース
 - 各ワークスペースは独立した `package.json` を持つ
-- **@crow/web**, **@crow/api**, **@crow/database** として参照可能
+- パッケージ参照は **`file:` プロトコル**を使用：`"@crow/database": "file:../../packages/database"`
+  - npm は `workspace:*` プロトコルを解決できないため使用禁止（`EUNSUPPORTEDPROTOCOL` エラーが発生する）
 
 ### 主要スタック
 
 | 層 | 技術 | 役割 |
 |-----|------|------|
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, daisyUI | ログイン UI、ページレンダリング、セッション管理 |
-| API | NestJS v11, Fastify | RESTful API、認可チェック、ビジネスロジック |
+| API | NestJS v11, Fastify, `@fastify/rate-limit` | RESTful API、認可チェック、ビジネスロジック |
 | Database | PostgreSQL 18 | データ永続化 |
-| ORM | Prisma v6+ | スキーマ管理、型安全データベース操作 |
+| ORM | Prisma v7（adapter-first） | スキーマ管理、型安全データベース操作 |
+
+> **Prisma v7 注意**: `PrismaClient` の初期化には `@prisma/adapter-pg`（`pg` パッケージ）が必須です。adapter なしでは DB 接続できません（後述）。
 
 ## 認証方針
 
@@ -214,22 +217,44 @@ npm run check:fix
 
 ```
 apps/web/
-├── app/               # App Router (Next.js 13+)
-├── components/        # React コンポーネント
-│   └── auth/         # 認証関連
-└── proxy.ts          # 全体プロキシ
+├── app/                   # App Router
+│   ├── actions/           # Server Actions
+│   │   ├── cookie-relay.ts        # Cookie/CSRF ヘッダ中継ヘルパー
+│   │   ├── login-actions.ts       # ログイン Action
+│   │   ├── logout-action.ts       # ログアウト Action
+│   │   └── work-log-actions.ts    # 作業記録 CRUD Actions
+│   ├── login/             # ログインページ
+│   └── page.tsx           # トップ（カレンダー）ページ
+├── components/            # React コンポーネント
+│   ├── auth/              # 認証関連
+│   └── theme/             # テーマ切替
+└── proxy.ts               # Middleware（セッション検証・リダイレクト）
 ```
 
 #### セッション・ルート保護
 
-- `proxy.ts` で unauthenticated user を `/login` へリダイレクト
+- `proxy.ts`（Next.js Middleware）で未認証ユーザーを `/login` へリダイレクト
+- `GET /auth/session` に sessionToken Cookie を送信し API で検証
+- Server Actions 経由のリクエストは Middleware をスキップ（`next-action` ヘッダで判定）
 - Server Components を積極的に使用（セッション検証に有利）
-- ログイン状態をプロップ・コンテキストで管理
+
+#### 入力検証
+
+- **Server Actions 内の入力検証は `zod` を使用する**（`apps/web` の依存に含まれる）
+- `FormData` から取り出した値を `z.preprocess` → `z.string()` でバリデーション
+- `z.object({...}).safeParse(...)` でエラーを型安全にハンドリングし、フォームへ返却
+- API 側の DTO（`class-validator`）と二重でバリデーションするが、フロント側の検証が第一防衛線
 
 #### 環境変数
 
-- `NEXT_PUBLIC_API_URL` - NestJS API の Base URL
-- サーバーサイドのシークレットは `.env.local` に配置
+| 変数名 | 用途 | デフォルト |
+|--------|------|----------|
+| `NEXT_PUBLIC_API_URL` | ブラウザ→API の Base URL | `http://localhost:3001` |
+| `API_URL_INTERNAL` | サーバーサイド→API の Base URL（コンテナ内部通信用） | `NEXT_PUBLIC_API_URL` を使用 |
+| `NEXT_PUBLIC_SESSION_COOKIE_NAME` | セッション Cookie 名 | `crow_session` |
+| `WEB_PORT` | Next.js 起動ポート | `3000` |
+
+- サーバーサイドのシークレットは root `.env` に配置
 
 ### @crow/api (NestJS)
 
@@ -237,14 +262,28 @@ apps/web/
 
 ```
 src/
-├── app.module.ts      # Root Module
-├── app.controller.ts  # Root Controller
+├── app.module.ts              # Root Module
+├── app.controller.ts          # Root Controller
 ├── auth/
 │   ├── auth.module.ts
 │   ├── auth.controller.ts
-│   ├── auth.service.ts
+│   ├── auth.service.ts        # ログイン・ログアウト・レート制限
 │   ├── session-store.service.ts
-│   └── dto/           # Data Transfer Objects
+│   ├── prisma.service.ts      # PrismaClient ラッパー（adapter-pg 使用）
+│   ├── session.guard.ts       # SessionGuard（Cookie 検証）
+│   ├── csrf.guard.ts          # CsrfGuard（変更系エンドポイント用）
+│   ├── current-user.decorator.ts  # @CurrentUser() デコレータ
+│   └── dto/                   # Data Transfer Objects
+└── work-logs/
+    ├── work-logs.module.ts
+    ├── work-logs.controller.ts
+    ├── work-logs.service.ts
+    └── dto/
+        ├── create-work-log.dto.ts
+        ├── update-work-log.dto.ts
+        ├── update-day-note.dto.ts
+        ├── month-query.dto.ts
+        └── day-query.dto.ts
 ```
 
 #### Decorator 使用
@@ -253,12 +292,37 @@ src/
 - 依存性注入は constructor に記述
 - 型安全性のため DTO を定義
 
-#### Session 管理
+#### Session 管理・認証エンドポイント
 
 - `SessionStoreService` で session lifecycle を管理
-- `/api/auth/login` で session を生成、Cookie に設定
-- `/api/auth/logout` で session を削除
-- すべての保護対象エンドポイントで session 検証
+- `POST /auth/login` でセッション生成、Cookie に設定
+- `POST /auth/logout` でセッション削除
+- `GET /auth/session` でセッション検証（proxy.ts から利用）
+- 全保護エンドポイントに `@UseGuards(SessionGuard)` を付与
+- 変更系エンドポイント（POST/PATCH/DELETE）には `@UseGuards(CsrfGuard)` も付与
+
+#### Work-logs エンドポイント
+
+| メソッド | パス | Guard | 説明 |
+|--------|------|-------|------|
+| GET | `/work-logs/month` | Session | 月次作業記録一覧 |
+| GET | `/work-logs/day` | Session | 日別作業記録一覧 |
+| POST | `/work-logs` | Session + CSRF | 作業記録作成 |
+| PATCH | `/work-logs/:id` | Session + CSRF | 作業記録更新 |
+| PATCH | `/work-logs/day-note` | Session + CSRF | 日別メモ更新 |
+| DELETE | `/work-logs/:id` | Session + CSRF | 作業記録削除 |
+
+#### 環境変数
+
+| 変数名 | 用途 | デフォルト |
+|--------|------|----------|
+| `DATABASE_URL` | PostgreSQL 接続文字列 | 必須 |
+| `SESSION_SECRET` | Cookie 署名用シークレット | 開発用デフォルト値（本番は必ず変更） |
+| `FRONTEND_ORIGIN` | CORS 許可オリジン | `http://localhost:3000` |
+| `API_PORT` | API 起動ポート | `3001` |
+| `RATE_LIMIT_MAX` | レート制限（リクエスト数） | 本番: 120、開発: 1000 |
+| `RATE_LIMIT_WINDOW` | レート制限の時間窓 | `1 minute` |
+| `LOGIN_RATE_LIMIT_WINDOW_SECONDS` | ログイン試行のレート制限窓（秒） | `60` |
 
 ### @crow/database (Prisma)
 
@@ -278,15 +342,37 @@ npm run db:generate
 npm run db:migrate
 ```
 
+#### データモデル
+
+| モデル | 説明 |
+|--------|------|
+| `User` | ユーザー（`UserRole`: admin/member、`AuthProvider`: local/oidc） |
+| `Session` | セッション（`sessionTokenHash`・`expiresAt`・`revokedAt`） |
+| `AuthAuditLog` | 認証イベント監査ログ |
+| `WorkLog` | 作業記録（`workDate`・`recordedAt`・`durationMinutes`） |
+| `DailyNote` | 日別メモ（userId + workDate でユニーク） |
+
 #### 使用方法
 
-他のパッケージから Prisma Client を使用する場合：
+**Prisma v7 は adapter-first**。`PrismaClient` を直接 `new` せず、`@prisma/adapter-pg` 経由で初期化する：
 
 ```typescript
-// apps/api/src/...
+// apps/api/src/auth/prisma.service.ts の例
+import { Injectable, type OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@crow/database';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit {
+    constructor() {
+        const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+        super({ adapter });
+    }
+
+    async onModuleInit() {
+        await this.$connect();
+    }
+}
 ```
 
 ## よくある作業
@@ -338,10 +424,12 @@ const prisma = new PrismaClient();
 | ポート 5432 が既に使用中 | `docker ps` で既存コンテナ確認、`npm run docker:down` で停止 |
 | Prisma 型エラー（`PrismaClient` が見つからない） | `npm run db:generate` を実行 |
 | マイグレーションエラー | `npm run docker:logs` でエラーログを確認、DB が起動しているか確認 |
-| モジュールが見つからない（`@crow/database` など） | ワークスペース参照が npm install で反映されているか確認 |
+| `EUNSUPPORTEDPROTOCOL` エラー | `package.json` の依存を `workspace:*` から `file:../../packages/database` に変更する |
+| `PrismaClient` で DB 接続エラー | `@prisma/adapter-pg` を使用した初期化になっているか確認（Prisma v7 は adapter 必須） |
 | TypeScript エラー（型の不整合） | `npm run typecheck` を実行、エラーを確認 |
 | Biome の自動修正が失敗 | `npm run lint` で詳細を確認、手動修正が必要な場合もある |
 | dev コマンドが起動しない | `.env` ファイルが root に存在するか、Docker が起動しているか確認 |
+| CORS エラー | `FRONTEND_ORIGIN` に Next.js の URL が正しく設定されているか確認 |
 
 ## 参考資料
 
