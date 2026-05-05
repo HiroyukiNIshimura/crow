@@ -2,9 +2,64 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 
 const defaultApiUrl =
     process.env.API_URL_INTERNAL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+const dateRangeSchema = z.object({
+    month: z.preprocess((v) => (typeof v === 'string' ? v : ''), z.string().regex(/^\d{4}-\d{2}$/)),
+    date: z.preprocess(
+        (v) => (typeof v === 'string' ? v : ''),
+        z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    ),
+});
+
+const workLogMutableFieldsSchema = z.object({
+    title: z.preprocess(
+        (v) => (typeof v === 'string' ? v.trim() : ''),
+        z.string().min(1, 'タイトルは必須です。'),
+    ),
+    note: z.preprocess((v) => (typeof v === 'string' ? v.trim() : ''), z.string()),
+    workTime: z.preprocess(
+        (v) => (typeof v === 'string' ? v.trim() : ''),
+        z
+            .string()
+            .refine((s) => s === '' || /^([01]\d|2[0-3]):([0-5]\d)$/.test(s), {
+                message: '作業時刻は HH:mm 形式で入力してください。',
+            }),
+    ),
+    durationMinutes: z.preprocess(
+        (v) => (typeof v === 'string' ? v.trim() : ''),
+        z.string().transform((s, ctx) => {
+            if (s === '') return undefined;
+            const n = Number(s);
+            if (!Number.isInteger(n)) {
+                ctx.addIssue({ code: 'custom', message: '作業時間は分単位で入力してください。' });
+                return z.NEVER;
+            }
+            return n;
+        }),
+    ),
+});
+
+const deleteWorkLogSchema = z.object({
+    logId: z.preprocess(
+        (v) => (typeof v === 'string' ? v : ''),
+        z.string().min(1, '削除対象が不正です。'),
+    ),
+});
+
+const updateWorkLogSchema = workLogMutableFieldsSchema.extend({
+    logId: z.preprocess(
+        (v) => (typeof v === 'string' ? v : ''),
+        z.string().min(1, '更新対象が不正です。'),
+    ),
+});
+
+function extractValidationMessage(error: z.ZodError): string {
+    return error.issues[0]?.message ?? '入力内容が不正です。';
+}
 
 type DaySummary = {
     date: string;
@@ -159,29 +214,29 @@ export async function getDayLogs(dateText: string): Promise<DayLogsResponse | nu
 }
 
 export async function createWorkLogAction(formData: FormData) {
-    const month = String(formData.get('month') ?? '');
-    const date = String(formData.get('date') ?? '');
-    const title = String(formData.get('title') ?? '').trim();
-    const note = String(formData.get('note') ?? '').trim();
-    const workTime = String(formData.get('workTime') ?? '').trim();
-    const durationText = String(formData.get('durationMinutes') ?? '').trim();
-    const durationMinutes = durationText ? Number(durationText) : undefined;
+    const parsedDate = dateRangeSchema.safeParse({
+        month: formData.get('month'),
+        date: formData.get('date'),
+    });
 
-    if (!/^\d{4}-\d{2}$/.test(month) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!parsedDate.success) {
         redirect('/');
     }
 
-    if (!title) {
-        redirect(getRedirectUrl(month, date, 'タイトルは必須です。'));
+    const { month, date } = parsedDate.data;
+
+    const parsedFields = workLogMutableFieldsSchema.safeParse({
+        title: formData.get('title'),
+        note: formData.get('note'),
+        workTime: formData.get('workTime'),
+        durationMinutes: formData.get('durationMinutes'),
+    });
+
+    if (!parsedFields.success) {
+        redirect(getRedirectUrl(month, date, extractValidationMessage(parsedFields.error)));
     }
 
-    if (typeof durationMinutes === 'number' && !Number.isInteger(durationMinutes)) {
-        redirect(getRedirectUrl(month, date, '作業時間は分単位で入力してください。'));
-    }
-
-    if (workTime && !/^([01]\d|2[0-3]):([0-5]\d)$/.test(workTime)) {
-        redirect(getRedirectUrl(month, date, '作業時刻は HH:mm 形式で入力してください。'));
-    }
+    const { title, note, workTime, durationMinutes } = parsedFields.data;
 
     const authContext = await getAuthContext();
     if (!authContext) {
@@ -221,17 +276,26 @@ export async function createWorkLogAction(formData: FormData) {
 }
 
 export async function deleteWorkLogAction(formData: FormData) {
-    const month = String(formData.get('month') ?? '');
-    const date = String(formData.get('date') ?? '');
-    const logId = String(formData.get('logId') ?? '');
+    const parsedDate = dateRangeSchema.safeParse({
+        month: formData.get('month'),
+        date: formData.get('date'),
+    });
 
-    if (!/^\d{4}-\d{2}$/.test(month) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!parsedDate.success) {
         redirect('/');
     }
 
-    if (!logId) {
-        redirect(getRedirectUrl(month, date, '削除対象が不正です。'));
+    const { month, date } = parsedDate.data;
+
+    const parsedLogId = deleteWorkLogSchema.safeParse({
+        logId: formData.get('logId'),
+    });
+
+    if (!parsedLogId.success) {
+        redirect(getRedirectUrl(month, date, extractValidationMessage(parsedLogId.error)));
     }
+
+    const { logId } = parsedLogId.data;
 
     const authContext = await getAuthContext();
     if (!authContext) {
@@ -263,34 +327,30 @@ export async function deleteWorkLogAction(formData: FormData) {
 }
 
 export async function updateWorkLogAction(formData: FormData) {
-    const month = String(formData.get('month') ?? '');
-    const date = String(formData.get('date') ?? '');
-    const logId = String(formData.get('logId') ?? '');
-    const title = String(formData.get('title') ?? '').trim();
-    const note = String(formData.get('note') ?? '').trim();
-    const workTime = String(formData.get('workTime') ?? '').trim();
-    const durationText = String(formData.get('durationMinutes') ?? '').trim();
-    const durationMinutes = durationText ? Number(durationText) : undefined;
+    const parsedDate = dateRangeSchema.safeParse({
+        month: formData.get('month'),
+        date: formData.get('date'),
+    });
 
-    if (!/^[0-9]{4}-[0-9]{2}$/.test(month) || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) {
+    if (!parsedDate.success) {
         redirect('/');
     }
 
-    if (!logId) {
-        redirect(getRedirectUrl(month, date, '更新対象が不正です。'));
+    const { month, date } = parsedDate.data;
+
+    const parsedFields = updateWorkLogSchema.safeParse({
+        logId: formData.get('logId'),
+        title: formData.get('title'),
+        note: formData.get('note'),
+        workTime: formData.get('workTime'),
+        durationMinutes: formData.get('durationMinutes'),
+    });
+
+    if (!parsedFields.success) {
+        redirect(getRedirectUrl(month, date, extractValidationMessage(parsedFields.error)));
     }
 
-    if (!title) {
-        redirect(getRedirectUrl(month, date, 'タイトルは必須です。'));
-    }
-
-    if (typeof durationMinutes === 'number' && !Number.isInteger(durationMinutes)) {
-        redirect(getRedirectUrl(month, date, '作業時間は分単位で入力してください。'));
-    }
-
-    if (workTime && !/^([01]\d|2[0-3]):([0-5]\d)$/.test(workTime)) {
-        redirect(getRedirectUrl(month, date, '作業時刻は HH:mm 形式で入力してください。'));
-    }
+    const { logId, title, note, workTime, durationMinutes } = parsedFields.data;
 
     const authContext = await getAuthContext();
     if (!authContext) {
@@ -329,13 +389,20 @@ export async function updateWorkLogAction(formData: FormData) {
 }
 
 export async function updateDayNoteAction(formData: FormData) {
-    const month = String(formData.get('month') ?? '');
-    const date = String(formData.get('date') ?? '');
-    const note = String(formData.get('dayNote') ?? '').trim();
+    const parsedDate = dateRangeSchema.safeParse({
+        month: formData.get('month'),
+        date: formData.get('date'),
+    });
 
-    if (!/^[0-9]{4}-[0-9]{2}$/.test(month) || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) {
+    if (!parsedDate.success) {
         redirect('/');
     }
+
+    const { month, date } = parsedDate.data;
+
+    const note = z
+        .preprocess((v) => (typeof v === 'string' ? v.trim() : ''), z.string())
+        .parse(formData.get('dayNote'));
 
     const authContext = await getAuthContext();
     if (!authContext) {
