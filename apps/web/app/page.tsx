@@ -559,19 +559,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                 <input type="hidden" name="month" value={monthText} />
                                 <input type="hidden" name="date" value={selectedDate} />
 
-                                <label className="form-control gap-2 mb-2">
+                                <div className="flex flex-col gap-2">
                                     <span className="text-sm font-semibold text-base-content/70">
                                         1日のメモ
                                     </span>
                                     <textarea
-                                        className="textarea textarea-bordered min-h-28 resize-none"
+                                        className="textarea textarea-bordered min-h-28 resize-none w-full"
                                         name="dayNote"
                                         defaultValue={dayData?.dayNote ?? ''}
                                         placeholder="この日の全体メモを入力"
                                     />
-                                </label>
+                                </div>
 
-                                <div className="flex justify-end">
+                                <div className="flex justify-end mt-3">
                                     <button type="submit" className="btn btn-primary btn-sm">
                                         1日のメモを保存
                                     </button>
