@@ -95,6 +95,16 @@ function formatSelectedDateLabel(dateText: string) {
     return `${month}月${day}日 ${weekday}`;
 }
 
+function toEndTimeLabel(endRecordedAt: string | null): string | null {
+    if (!endRecordedAt) return null;
+    return new Intl.DateTimeFormat('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Tokyo',
+    }).format(new Date(endRecordedAt));
+}
+
 function toClockLabel(dateText: string) {
     return new Intl.DateTimeFormat('ja-JP', {
         hour: '2-digit',
@@ -456,19 +466,28 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                         placeholder="作業タイトル"
                                         required
                                     />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <input
+                                            className="input input-bordered input-sm w-full"
+                                            type="time"
+                                            name="workTime"
+                                            placeholder="開始時刻"
+                                        />
+                                        <input
+                                            className="input input-bordered input-sm w-full"
+                                            type="time"
+                                            name="endTime"
+                                            placeholder="終了時刻（任意）"
+                                        />
+                                    </div>
                                     <input
                                         className="input input-bordered input-sm w-full"
                                         type="number"
                                         name="durationMinutes"
-                                        placeholder="作業時間（分）"
+                                        placeholder="作業時間（分）※終了時刻入力で自動計算"
                                         min={0}
                                         max={1440}
                                         step={1}
-                                    />
-                                    <input
-                                        className="input input-bordered input-sm w-full"
-                                        type="time"
-                                        name="workTime"
                                     />
                                     <textarea
                                         className="textarea textarea-bordered textarea-sm min-h-20 resize-none"
@@ -491,7 +510,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                         <article key={log.id} className="rounded-md border border-base-200 p-3">
                                             <div className="mb-2 flex items-start justify-between gap-3">
                                                 <div className="text-xs font-medium text-base-content/50">
-                                                    {toClockLabel(log.recordedAt ?? log.createdAt)} 記録
+                                                    {toClockLabel(log.createdAt)} 記録
                                                 </div>
                                                 <span className="badge badge-ghost shrink-0">
                                                     {log.durationMinutes
@@ -512,21 +531,31 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                                     defaultValue={log.title}
                                                     required
                                                 />
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <input
+                                                        className="input input-bordered input-sm w-full"
+                                                        type="time"
+                                                        name="workTime"
+                                                        defaultValue={toTimeInputValue(log.recordedAt)}
+                                                        placeholder="開始時刻"
+                                                    />
+                                                    <input
+                                                        className="input input-bordered input-sm w-full"
+                                                        type="time"
+                                                        name="endTime"
+                                                        defaultValue={toTimeInputValue(log.endRecordedAt)}
+                                                        placeholder="終了時刻（任意）"
+                                                    />
+                                                </div>
                                                 <input
                                                     className="input input-bordered input-sm w-full"
                                                     type="number"
                                                     name="durationMinutes"
                                                     defaultValue={log.durationMinutes ?? ''}
-                                                    placeholder="作業時間（分）"
+                                                    placeholder="作業時間（分）※終了時刻入力で自動計算"
                                                     min={0}
                                                     max={1440}
                                                     step={1}
-                                                />
-                                                <input
-                                                    className="input input-bordered input-sm w-full"
-                                                    type="time"
-                                                    name="workTime"
-                                                    defaultValue={toTimeInputValue(log.recordedAt)}
                                                 />
                                                 <textarea
                                                     className="textarea textarea-bordered textarea-sm min-h-20 resize-none"

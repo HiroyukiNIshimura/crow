@@ -74,6 +74,7 @@ model WorkLog {
   userId          String
   workDate        DateTime
   recordedAt      DateTime?
+  endRecordedAt   DateTime?
   title           String
   note            String?
   durationMinutes Int?

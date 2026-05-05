@@ -26,7 +26,15 @@ const workLogMutableFieldsSchema = z.object({
         z
             .string()
             .refine((s) => s === '' || /^([01]\d|2[0-3]):([0-5]\d)$/.test(s), {
-                message: '作業時刻は HH:mm 形式で入力してください。',
+                message: '開始時刻は HH:mm 形式で入力してください。',
+            }),
+    ),
+    endTime: z.preprocess(
+        (v) => (typeof v === 'string' ? v.trim() : ''),
+        z
+            .string()
+            .refine((s) => s === '' || /^([01]\d|2[0-3]):([0-5]\d)$/.test(s), {
+                message: '終了時刻は HH:mm 形式で入力してください。',
             }),
     ),
     durationMinutes: z.preprocess(
@@ -88,6 +96,7 @@ export type DayLogsResponse = {
         title: string;
         note: string | null;
         recordedAt: string | null;
+        endRecordedAt: string | null;
         durationMinutes: number | null;
         createdAt: string;
         updatedAt: string;
@@ -229,6 +238,7 @@ export async function createWorkLogAction(formData: FormData) {
         title: formData.get('title'),
         note: formData.get('note'),
         workTime: formData.get('workTime'),
+        endTime: formData.get('endTime'),
         durationMinutes: formData.get('durationMinutes'),
     });
 
@@ -236,7 +246,7 @@ export async function createWorkLogAction(formData: FormData) {
         redirect(getRedirectUrl(month, date, extractValidationMessage(parsedFields.error)));
     }
 
-    const { title, note, workTime, durationMinutes } = parsedFields.data;
+    const { title, note, workTime, endTime, durationMinutes } = parsedFields.data;
 
     const authContext = await getAuthContext();
     if (!authContext) {
@@ -260,6 +270,7 @@ export async function createWorkLogAction(formData: FormData) {
                 title,
                 note,
                 ...(workTime ? { workTime } : {}),
+                ...(endTime ? { endTime } : {}),
                 durationMinutes,
             }),
             cache: 'no-store',
@@ -343,6 +354,7 @@ export async function updateWorkLogAction(formData: FormData) {
         title: formData.get('title'),
         note: formData.get('note'),
         workTime: formData.get('workTime'),
+        endTime: formData.get('endTime'),
         durationMinutes: formData.get('durationMinutes'),
     });
 
@@ -350,7 +362,7 @@ export async function updateWorkLogAction(formData: FormData) {
         redirect(getRedirectUrl(month, date, extractValidationMessage(parsedFields.error)));
     }
 
-    const { logId, title, note, workTime, durationMinutes } = parsedFields.data;
+    const { logId, title, note, workTime, endTime, durationMinutes } = parsedFields.data;
 
     const authContext = await getAuthContext();
     if (!authContext) {
@@ -373,6 +385,7 @@ export async function updateWorkLogAction(formData: FormData) {
                 title,
                 note,
                 ...(workTime ? { workTime } : {}),
+                ...(endTime ? { endTime } : {}),
                 durationMinutes,
             }),
             cache: 'no-store',

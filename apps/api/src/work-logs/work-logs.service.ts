@@ -30,6 +30,18 @@ export class WorkLogsService {
         return new Date(`${dateText}T${workTime}:00+09:00`);
     }
 
+    private buildDurationFromTimes(workTime?: string, endTime?: string): number | undefined {
+        if (!workTime || !endTime) return undefined;
+
+        const [sh, sm] = workTime.split(':').map(Number);
+        const [eh, em] = endTime.split(':').map(Number);
+        const start = sh * 60 + sm;
+        let end = eh * 60 + em;
+        if (end < start) end += 24 * 60; // 深夜をまたぐ場合
+
+        return end - start;
+    }
+
     async getMonth(userId: string, year: number, month: number) {
         const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
         const end = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
@@ -151,6 +163,7 @@ export class WorkLogsService {
                 title: true,
                 note: true,
                 recordedAt: true,
+                endRecordedAt: true,
                 durationMinutes: true,
                 createdAt: true,
                 updatedAt: true,
@@ -199,20 +212,26 @@ export class WorkLogsService {
         const [year, month, day] = input.workDate.split('-').map(Number);
         const workDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
         const recordedAt = this.buildRecordedAt(input.workDate, input.workTime);
+        const endRecordedAt = this.buildRecordedAt(input.workDate, input.endTime);
+
+        const calculatedDuration = this.buildDurationFromTimes(input.workTime, input.endTime);
+        const durationMinutes = calculatedDuration ?? input.durationMinutes;
 
         return this.prisma.workLog.create({
             data: {
                 userId,
                 workDate,
                 recordedAt,
+                endRecordedAt,
                 title: input.title.trim(),
                 note: input.note?.trim() ? input.note.trim() : null,
-                durationMinutes: input.durationMinutes,
+                durationMinutes,
             },
             select: {
                 id: true,
                 workDate: true,
                 recordedAt: true,
+                endRecordedAt: true,
                 title: true,
                 note: true,
                 durationMinutes: true,
@@ -252,6 +271,15 @@ export class WorkLogsService {
                 ? this.buildRecordedAt(effectiveDateText, input.workTime)
                 : undefined;
 
+        const endRecordedAt =
+            typeof input.endTime === 'string'
+                ? this.buildRecordedAt(effectiveDateText, input.endTime)
+                : undefined;
+
+        const calculatedDuration = this.buildDurationFromTimes(input.workTime, input.endTime);
+        const durationMinutesToSave =
+            calculatedDuration !== undefined ? calculatedDuration : input.durationMinutes;
+
         return this.prisma.workLog.update({
             where: { id },
             data: {
@@ -259,16 +287,18 @@ export class WorkLogsService {
                 ...(typeof input.note === 'string'
                     ? { note: input.note.trim() ? input.note.trim() : null }
                     : {}),
-                ...(typeof input.durationMinutes === 'number'
-                    ? { durationMinutes: input.durationMinutes }
+                ...(typeof durationMinutesToSave === 'number'
+                    ? { durationMinutes: durationMinutesToSave }
                     : {}),
                 ...(workDate ? { workDate } : {}),
                 ...(recordedAt !== undefined ? { recordedAt } : {}),
+                ...(endRecordedAt !== undefined ? { endRecordedAt } : {}),
             },
             select: {
                 id: true,
                 workDate: true,
                 recordedAt: true,
+                endRecordedAt: true,
                 title: true,
                 note: true,
                 durationMinutes: true,
