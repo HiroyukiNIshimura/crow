@@ -109,8 +109,7 @@ export async function changePasswordAction(
         if (!response.ok) {
             const payload = await response.json().catch(() => null);
             return {
-                error:
-                    extractMessage(payload) ?? 'エラーが発生しました。もう一度お試しください。',
+                error: extractMessage(payload) ?? 'エラーが発生しました。もう一度お試しください。',
                 success: false,
             };
         }
