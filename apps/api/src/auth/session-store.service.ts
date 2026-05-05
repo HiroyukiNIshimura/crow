@@ -62,6 +62,20 @@ export class SessionStoreService {
             return null;
         }
 
+        if (!session.user.isActive) {
+            const now = new Date();
+
+            await this.prisma.session.updateMany({
+                where: {
+                    userId: session.userId,
+                    revokedAt: null,
+                },
+                data: { revokedAt: now },
+            });
+
+            return null;
+        }
+
         if (session.revokedAt) {
             return null;
         }
@@ -152,6 +166,21 @@ export class SessionStoreService {
                 revokedAt: new Date(),
             },
         });
+    }
+
+    /** 指定ユーザーのアクティブなセッションをすべて無効化する */
+    async revokeAllByUser(userId: string) {
+        const result = await this.prisma.session.updateMany({
+            where: {
+                userId,
+                revokedAt: null,
+            },
+            data: {
+                revokedAt: new Date(),
+            },
+        });
+
+        return result.count;
     }
 
     private hashToken(token: string) {

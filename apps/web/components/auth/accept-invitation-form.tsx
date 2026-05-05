@@ -32,7 +32,7 @@ export function AcceptInvitationForm({ token }: { token: string }) {
     return (
         <section className="card border border-base-200 bg-base-100 shadow-2xl">
             <div className="card-body gap-4 px-6 py-10 sm:px-8 sm:py-12">
-                <form className="flex flex-col gap-8" action={formAction}>
+                <form className="flex flex-col gap-4" action={formAction}>
                     <input type="hidden" name="token" value={token} />
 
                     <label className="form-control w-full gap-2">

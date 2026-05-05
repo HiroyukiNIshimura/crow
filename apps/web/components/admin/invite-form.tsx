@@ -23,7 +23,7 @@ export function InviteForm() {
     const [state, formAction] = useActionState(createInvitationAction, initialState);
 
     return (
-        <form action={formAction} className="flex flex-col gap-8">
+        <form action={formAction} className="flex flex-col gap-4">
             <label className="form-control w-full gap-2">
                 <span className="label-text text-sm font-medium">メールアドレス</span>
                 <input

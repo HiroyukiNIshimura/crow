@@ -42,7 +42,7 @@ export function LoginForm() {
                     </div>
                 ) : null}
 
-                <form className="space-y-4" action={formAction}>
+                <form className="flex flex-col gap-4" action={formAction}>
                     <label className="form-control w-full gap-2">
                         <span className="label-text text-sm font-medium">メールアドレス</span>
                         <input

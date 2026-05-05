@@ -4,10 +4,11 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { MailModule } from './mail/mail.module';
+import { UsersModule } from './users/users.module';
 import { WorkLogsModule } from './work-logs/work-logs.module';
 
 @Module({
-    imports: [AuthModule, InvitationsModule, MailModule, WorkLogsModule],
+    imports: [AuthModule, InvitationsModule, MailModule, WorkLogsModule, UsersModule],
     controllers: [AppController],
     providers: [AppService],
 })
