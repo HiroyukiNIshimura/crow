@@ -8,6 +8,12 @@ type InvitationMailOptions = {
     expiresInHours: number;
 };
 
+type PasswordResetMailOptions = {
+    to: string;
+    resetUrl: string;
+    expiresInMinutes: number;
+};
+
 @Injectable()
 export class MailService {
     private readonly logger = new Logger(MailService.name);
@@ -27,5 +33,19 @@ export class MailService {
         });
 
         this.logger.log(`Invitation mail sent to ${options.to}`);
+    }
+
+    async sendPasswordReset(options: PasswordResetMailOptions): Promise<void> {
+        await this.mailer.sendMail({
+            to: options.to,
+            subject: 'Crow パスワード再設定のご案内',
+            template: 'password-reset',
+            context: {
+                resetUrl: options.resetUrl,
+                expiresInMinutes: options.expiresInMinutes,
+            },
+        });
+
+        this.logger.log(`Password reset mail sent to ${options.to}`);
     }
 }

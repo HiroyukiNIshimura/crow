@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/login'];
+const PUBLIC_PATHS = ['/login', '/forgot-password', '/reset-password'];
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 async function verifySession(cookieName: string, token: string) {

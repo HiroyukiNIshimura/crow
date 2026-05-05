@@ -1,12 +1,13 @@
+import Link from 'next/link';
 import Image from 'next/image';
 import { LoginForm } from '../../components/auth/login-form';
 
 type Props = {
-    searchParams: Promise<{ invited?: string }>;
+    searchParams: Promise<{ invited?: string; reset?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: Props) {
-    const { invited } = await searchParams;
+    const { invited, reset } = await searchParams;
 
     return (
         <main className="app-shell flex items-center justify-center px-4 py-8">
@@ -29,13 +30,21 @@ export default async function LoginPage({ searchParams }: Props) {
                         作業記録を、安全に・すばやく始めましょう。
                     </p>
                     <p className="text-xs text-base-content/50">
-                        パスワード再設定は現在準備中です。問題がある場合は管理者にお問い合わせください。
+                        <Link href="/forgot-password" className="link link-primary">
+                            パスワードをお忘れですか？
+                        </Link>
                     </p>
                 </div>
 
                 {invited === '1' ? (
                     <div className="alert alert-success py-3 text-sm" role="status">
                         <span>アカウントを作成しました。メールアドレスとパスワードでログインしてください。</span>
+                    </div>
+                ) : null}
+
+                {reset === '1' ? (
+                    <div className="alert alert-success py-3 text-sm" role="status">
+                        <span>パスワードを変更しました。新しいパスワードでログインしてください。</span>
                     </div>
                 ) : null}
 

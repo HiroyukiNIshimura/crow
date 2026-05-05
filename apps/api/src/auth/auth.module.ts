@@ -5,8 +5,10 @@ import { CsrfGuard } from './csrf.guard';
 import { PrismaService } from './prisma.service';
 import { SessionGuard } from './session.guard';
 import { SessionStoreService } from './session-store.service';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
+    imports: [MailModule],
     controllers: [AuthController],
     providers: [AuthService, SessionStoreService, PrismaService, SessionGuard, CsrfGuard],
     exports: [SessionGuard, CsrfGuard, SessionStoreService, PrismaService],

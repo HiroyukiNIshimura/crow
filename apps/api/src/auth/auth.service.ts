@@ -1,8 +1,11 @@
+import { createHash, randomBytes } from 'node:crypto';
 import {
+    BadRequestException,
     HttpException,
     HttpStatus,
     Injectable,
     Logger,
+    NotFoundException,
     type OnModuleInit,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -10,6 +13,7 @@ import type { Prisma } from '@crow/database';
 import * as argon2 from 'argon2';
 import { PrismaService } from './prisma.service';
 import { SessionStoreService } from './session-store.service';
+import { MailService } from '../mail/mail.service';
 
 type SafeUser = {
     id: string;
@@ -34,6 +38,7 @@ export class AuthService implements OnModuleInit {
     constructor(
         private readonly prisma: PrismaService,
         private readonly sessionStore: SessionStoreService,
+        private readonly mail: MailService,
     ) {}
 
     async onModuleInit() {
@@ -164,6 +169,110 @@ export class AuthService implements OnModuleInit {
             userAgent: metadata?.userAgent,
             metadata: { sessionId },
         });
+    }
+
+    async requestPasswordReset(email: string, metadata?: RequestMetadata) {
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const user = await this.prisma.user.findUnique({
+            where: { email: normalizedEmail },
+        });
+
+        // タイミング攻撃防止: ユーザーが存在しない場合も同一レスポンスを返す
+        if (!user?.isActive) {
+            this.logger.log(`Password reset requested for unknown/inactive email: ${normalizedEmail}`);
+            return;
+        }
+
+        // 既存の未使用トークンを削除
+        await this.prisma.passwordResetToken.deleteMany({
+            where: { userId: user.id, usedAt: null },
+        });
+
+        const rawToken = randomBytes(32).toString('hex');
+        const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+        const expireMinutes = Number(process.env.PASSWORD_RESET_EXPIRE_MINUTES ?? 30);
+        const expiresAt = new Date(Date.now() + expireMinutes * 60 * 1000);
+
+        await this.prisma.passwordResetToken.create({
+            data: { userId: user.id, tokenHash, expiresAt },
+        });
+
+        const frontendOrigin = process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000';
+        const resetUrl = `${frontendOrigin}/reset-password?token=${rawToken}`;
+
+        await this.mail.sendPasswordReset({
+            to: normalizedEmail,
+            resetUrl,
+            expiresInMinutes: expireMinutes,
+        });
+
+        await this.createAuditLog({
+            eventType: 'PASSWORD_RESET_REQUESTED',
+            userId: user.id,
+            emailOrIdentifier: normalizedEmail,
+            ipAddress: metadata?.ipAddress,
+            userAgent: metadata?.userAgent,
+        });
+
+        this.logger.log(`Password reset requested for ${normalizedEmail}`);
+    }
+
+    async resetPassword(rawToken: string, newPassword: string, metadata?: RequestMetadata) {
+        const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+
+        const record = await this.prisma.passwordResetToken.findUnique({
+            where: { tokenHash },
+            include: { user: true },
+        });
+
+        if (!record) {
+            throw new NotFoundException('リセットリンクが無効です。');
+        }
+
+        if (record.usedAt) {
+            throw new BadRequestException('このリンクはすでに使用済みです。');
+        }
+
+        if (record.expiresAt < new Date()) {
+            throw new BadRequestException('リセットリンクの有効期限が切れています。再度パスワード再設定をお試しください。');
+        }
+
+        if (!record.user.isActive) {
+            throw new BadRequestException('アカウントが無効です。管理者にお問い合わせください。');
+        }
+
+        const passwordHash = await argon2.hash(newPassword, { type: argon2.argon2id });
+
+        await this.prisma.$transaction(async (tx) => {
+            // パスワード更新
+            await tx.user.update({
+                where: { id: record.userId },
+                data: { passwordHash },
+            });
+
+            // トークンを使用済みにする
+            await tx.passwordResetToken.update({
+                where: { tokenHash },
+                data: { usedAt: new Date() },
+            });
+
+            // 既存セッションをすべて失効
+            await tx.session.updateMany({
+                where: { userId: record.userId, revokedAt: null },
+                data: { revokedAt: new Date() },
+            });
+        });
+
+        await this.createAuditLog({
+            eventType: 'PASSWORD_RESET_COMPLETED',
+            userId: record.userId,
+            emailOrIdentifier: record.user.email,
+            ipAddress: metadata?.ipAddress,
+            userAgent: metadata?.userAgent,
+        });
+
+        this.logger.log(`Password reset completed for ${record.user.email}`);
     }
 
     async ensureAdminUser() {
