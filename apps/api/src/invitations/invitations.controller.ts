@@ -16,7 +16,7 @@ export class InvitationsController {
     @Post()
     @UseGuards(SessionGuard, CsrfGuard, RoleGuard('admin'))
     async create(@Body() body: CreateInvitationDto, @CurrentUser() user: FastifyRequest['user']) {
-        return this.invitationsService.create(user!.id, body.email, body.role);
+        return this.invitationsService.create(user?.id ?? '', body.email, body.role);
     }
 
     @Post(':token/accept')
