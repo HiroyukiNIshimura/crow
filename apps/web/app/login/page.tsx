@@ -1,7 +1,13 @@
 import Image from 'next/image';
 import { LoginForm } from '../../components/auth/login-form';
 
-export default function LoginPage() {
+type Props = {
+    searchParams: Promise<{ invited?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: Props) {
+    const { invited } = await searchParams;
+
     return (
         <main className="app-shell flex items-center justify-center px-4 py-8">
             <div className="w-full max-w-md space-y-5">
@@ -26,6 +32,12 @@ export default function LoginPage() {
                         パスワード再設定は現在準備中です。問題がある場合は管理者にお問い合わせください。
                     </p>
                 </div>
+
+                {invited === '1' ? (
+                    <div className="alert alert-success py-3 text-sm" role="status">
+                        <span>アカウントを作成しました。メールアドレスとパスワードでログインしてください。</span>
+                    </div>
+                ) : null}
 
                 <LoginForm />
             </div>

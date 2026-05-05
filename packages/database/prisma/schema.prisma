@@ -27,10 +27,11 @@ model User {
   isActive       Boolean        @default(true)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-  sessions       Session[]
-  workLogs       WorkLog[]
-  dailyNotes     DailyNote[]
-  authAuditLogs  AuthAuditLog[]
+  sessions          Session[]
+  workLogs          WorkLog[]
+  dailyNotes        DailyNote[]
+  authAuditLogs     AuthAuditLog[]
+  sentInvitations   UserInvitation[]
 
   @@map("users")
 }
@@ -99,4 +100,19 @@ model DailyNote {
   @@unique([userId, workDate])
   @@index([userId])
   @@map("daily_notes")
+}
+
+model UserInvitation {
+  id          String    @id @default(cuid())
+  email       String
+  role        UserRole  @default(member)
+  tokenHash   String    @unique
+  invitedById String
+  invitedBy   User      @relation(fields: [invitedById], references: [id])
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+  @@map("user_invitations")
 }

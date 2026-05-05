@@ -37,11 +37,11 @@ export class AuthService implements OnModuleInit {
     ) {}
 
     async onModuleInit() {
-        if (!this.isDemoUserProvisioningEnabled()) {
+        if (!this.isAdminUserProvisioningEnabled()) {
             return;
         }
 
-        await this.ensureDemoUser();
+        await this.ensureAdminUser();
     }
 
     async login(email: string, password: string, metadata: RequestMetadata) {
@@ -166,50 +166,28 @@ export class AuthService implements OnModuleInit {
         });
     }
 
-    async ensureDemoUser() {
-        const demoEmail = (process.env.DEMO_USER_EMAIL ?? 'admin@example.com').trim().toLowerCase();
-        const demoPassword = process.env.DEMO_USER_PASSWORD ?? 'password123!';
-        const demoDisplayName = process.env.DEMO_USER_NAME ?? 'Crow Admin';
+    async ensureAdminUser() {
+        const email = (process.env.ADMIN_USER_EMAIL ?? 'admin@example.com').trim().toLowerCase();
+        const password = process.env.ADMIN_USER_PASSWORD ?? 'password123!';
+        const displayName = process.env.ADMIN_USER_NAME ?? 'Crow Admin';
 
-        const passwordHash = await argon2.hash(demoPassword, {
-            type: argon2.argon2id,
-        });
+        const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
 
         await this.prisma.user.upsert({
-            where: { email: demoEmail },
-            create: {
-                email: demoEmail,
-                displayName: demoDisplayName,
-                role: 'admin',
-                passwordHash,
-                provider: 'local',
-                isActive: true,
-            },
-            update: {
-                displayName: demoDisplayName,
-                role: 'admin',
-                passwordHash,
-                provider: 'local',
-                isActive: true,
-            },
+            where: { email },
+            create: { email, displayName, role: 'admin', passwordHash, provider: 'local', isActive: true },
+            update: { displayName, role: 'admin', passwordHash, provider: 'local', isActive: true },
         });
     }
 
-    private isDemoUserProvisioningEnabled() {
-        const env = process.env.NODE_ENV;
-        const flag = process.env.DEMO_USER_ENABLED;
-
-        // 明示指定がある場合はそれを最優先
-        if (flag === 'true') {
-            return true;
-        }
+    private isAdminUserProvisioningEnabled() {
+        const flag = process.env.ADMIN_USER_ENABLED;
 
         if (flag === 'false') {
             return false;
         }
 
-        // 既定: 本番では無効、非本番では有効
-        return env !== 'production';
+        return flag === 'true';
     }
 
     private assertLoginAttemptAllowed(email: string) {

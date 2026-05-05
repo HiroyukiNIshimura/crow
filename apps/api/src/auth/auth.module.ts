@@ -9,6 +9,6 @@ import { SessionStoreService } from './session-store.service';
 @Module({
     controllers: [AuthController],
     providers: [AuthService, SessionStoreService, PrismaService, SessionGuard, CsrfGuard],
-    exports: [SessionGuard, CsrfGuard, SessionStoreService],
+    exports: [SessionGuard, CsrfGuard, SessionStoreService, PrismaService],
 })
 export class AuthModule {}

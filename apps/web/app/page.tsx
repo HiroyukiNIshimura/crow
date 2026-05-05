@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -12,6 +11,7 @@ import {
     updateDayNoteAction,
     updateWorkLogAction,
 } from './actions/work-log-actions';
+import { getCurrentUser } from './lib/auth';
 
 type HomePageProps = {
     searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -93,16 +93,6 @@ function formatSelectedDateLabel(dateText: string) {
     const weekday = parts.find((part) => part.type === 'weekday')?.value ?? '';
 
     return `${month}月${day}日 ${weekday}`;
-}
-
-function toEndTimeLabel(endRecordedAt: string | null): string | null {
-    if (!endRecordedAt) return null;
-    return new Intl.DateTimeFormat('ja-JP', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        timeZone: 'Asia/Tokyo',
-    }).format(new Date(endRecordedAt));
 }
 
 function toClockLabel(dateText: string) {
@@ -204,11 +194,9 @@ function buildCalendarCells(
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-    const cookieStore = await cookies();
-    const cookieName = process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME ?? 'crow_session';
-    const session = cookieStore.get(cookieName);
+    const currentUser = await getCurrentUser();
 
-    if (!session) {
+    if (!currentUser) {
         redirect('/login');
     }
 
@@ -278,9 +266,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                             />
                         </div>
                         <div>
-                            <span className="badge badge-primary badge-outline">作業記録</span>
+                            <div className="flex items-center gap-2">
+                                <span className="badge badge-primary badge-outline">作業記録</span>
+                                {currentUser.role === 'admin' && (
+                                    <span className="badge badge-warning badge-outline">管理者</span>
+                                )}
+                            </div>
                             <p className="mt-1 text-sm text-base-content/60">
-                                日々の作業ログを残し、月次の振り返りに使うためのログブックです。
+                                {currentUser.displayName} さん
                             </p>
                         </div>
                     </div>
@@ -288,6 +281,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         <Link href={`/?month=${todayDate.slice(0, 7)}&date=${todayDate}`} className="btn btn-ghost btn-sm">
                             今日へ
                         </Link>
+                        {currentUser.role === 'admin' && (
+                            <Link href="/admin/invite" className="btn btn-outline btn-sm">
+                                ユーザーを招待
+                            </Link>
+                        )}
                         <ThemeToggle />
                         <LogoutButton />
                     </div>

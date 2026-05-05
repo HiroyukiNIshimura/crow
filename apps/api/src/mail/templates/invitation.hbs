@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crow への招待</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f4f5; margin: 0; padding: 32px 16px; }
+    .card { background: #fff; border-radius: 8px; max-width: 480px; margin: 0 auto; padding: 40px 32px; }
+    h1 { font-size: 20px; color: #18181b; margin-top: 0; }
+    p { color: #52525b; line-height: 1.6; }
+    .btn {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 12px 28px;
+      background: #2563eb;
+      color: #fff;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .note { margin-top: 24px; font-size: 13px; color: #a1a1aa; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Crow への招待</h1>
+    <p><strong>{{invitedBy}}</strong> さんがあなたを Crow に招待しました。</p>
+    <p>以下のボタンからアカウントを作成してください。このリンクは <strong>{{expiresInHours}} 時間</strong>で有効期限が切れます。</p>
+    <a href="{{acceptUrl}}" class="btn">アカウントを作成する</a>
+    <p class="note">
+      このメールに心当たりがない場合は無視してください。<br />
+      ボタンが機能しない場合は以下の URL をコピーしてブラウザに貼り付けてください。<br />
+      {{acceptUrl}}
+    </p>
+  </div>
+</body>
+</html>
