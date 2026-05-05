@@ -16,6 +16,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 import { CsrfGuard } from './csrf.guard';
 import { CurrentUser } from './current-user.decorator';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -156,5 +157,36 @@ export class AuthController {
             userAgent,
         });
         return { message: 'パスワードを変更しました。新しいパスワードでログインしてください。' };
+    }
+
+    @Post('change-password')
+    @HttpCode(200)
+    @UseGuards(SessionGuard, CsrfGuard)
+    async changePassword(
+        @Body() body: ChangePasswordDto,
+        @Req() request: FastifyRequest,
+        @CurrentUser() user: FastifyRequest['user'],
+    ) {
+        if (!user) {
+            throw new UnauthorizedException();
+        }
+
+        const cookieName = process.env.SESSION_COOKIE_NAME ?? 'crow_session';
+        const sessionToken = request.cookies[cookieName];
+
+        if (!sessionToken) {
+            throw new UnauthorizedException();
+        }
+
+        const userAgent = this.resolveUserAgent(request.headers['user-agent']);
+        await this.authService.changePassword(
+            user.id,
+            body.currentPassword,
+            body.newPassword,
+            sessionToken,
+            { ipAddress: request.ip, userAgent },
+        );
+
+        return { message: 'パスワードを変更しました。' };
     }
 }

@@ -279,6 +279,66 @@ export class AuthService implements OnModuleInit {
         this.logger.log(`Password reset completed for ${record.user.email}`);
     }
 
+    async changePassword(
+        userId: string,
+        currentPassword: string,
+        newPassword: string,
+        currentSessionToken: string,
+        metadata?: RequestMetadata,
+    ) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+        if (!user?.passwordHash) {
+            throw new UnauthorizedException('パスワードが設定されていません。');
+        }
+
+        const verified = await argon2.verify(user.passwordHash, currentPassword);
+        if (!verified) {
+            throw new UnauthorizedException('現在のパスワードが正しくありません。');
+        }
+
+        const isSame = await argon2.verify(user.passwordHash, newPassword);
+        if (isSame) {
+            throw new BadRequestException(
+                '新しいパスワードは現在のパスワードと異なる値にしてください。',
+            );
+        }
+
+        const passwordHash = await argon2.hash(newPassword, { type: argon2.argon2id });
+
+        const currentTokenHash = createHash('sha256').update(currentSessionToken).digest('hex');
+        const currentSession = await this.prisma.session.findUnique({
+            where: { sessionTokenHash: currentTokenHash },
+            select: { id: true },
+        });
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.user.update({
+                where: { id: userId },
+                data: { passwordHash },
+            });
+
+            await tx.session.updateMany({
+                where: {
+                    userId,
+                    revokedAt: null,
+                    ...(currentSession ? { id: { not: currentSession.id } } : {}),
+                },
+                data: { revokedAt: new Date() },
+            });
+        });
+
+        await this.createAuditLog({
+            eventType: 'PASSWORD_CHANGED',
+            userId,
+            emailOrIdentifier: user.email,
+            ipAddress: metadata?.ipAddress,
+            userAgent: metadata?.userAgent,
+        });
+
+        this.logger.log(`Password changed for ${user.email}`);
+    }
+
     async ensureAdminUser() {
         const email = (process.env.ADMIN_USER_EMAIL ?? 'admin@example.com').trim().toLowerCase();
         const password = process.env.ADMIN_USER_PASSWORD ?? 'password123!';
