@@ -23,19 +23,15 @@ const workLogMutableFieldsSchema = z.object({
     note: z.preprocess((v) => (typeof v === 'string' ? v.trim() : ''), z.string()),
     workTime: z.preprocess(
         (v) => (typeof v === 'string' ? v.trim() : ''),
-        z
-            .string()
-            .refine((s) => s === '' || /^([01]\d|2[0-3]):([0-5]\d)$/.test(s), {
-                message: '開始時刻は HH:mm 形式で入力してください。',
-            }),
+        z.string().refine((s) => s === '' || /^([01]\d|2[0-3]):([0-5]\d)$/.test(s), {
+            message: '開始時刻は HH:mm 形式で入力してください。',
+        }),
     ),
     endTime: z.preprocess(
         (v) => (typeof v === 'string' ? v.trim() : ''),
-        z
-            .string()
-            .refine((s) => s === '' || /^([01]\d|2[0-3]):([0-5]\d)$/.test(s), {
-                message: '終了時刻は HH:mm 形式で入力してください。',
-            }),
+        z.string().refine((s) => s === '' || /^([01]\d|2[0-3]):([0-5]\d)$/.test(s), {
+            message: '終了時刻は HH:mm 形式で入力してください。',
+        }),
     ),
     durationMinutes: z.preprocess(
         (v) => (typeof v === 'string' ? v.trim() : ''),
