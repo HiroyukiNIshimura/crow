@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { AdminTabNav } from '../../../components/admin/admin-tab-nav';
 import { InviteForm } from '../../../components/admin/invite-form';
 import { getAdminUsers, updateUserActiveAction } from '../../actions/admin-actions';
@@ -51,7 +51,11 @@ export default async function AdminInvitePage({ searchParams }: AdminInvitePageP
                 </div>
 
                 {successMessage ? (
-                    <div className="alert alert-success py-3 text-sm" role="status" aria-live="polite">
+                    <div
+                        className="alert alert-success py-3 text-sm"
+                        role="status"
+                        aria-live="polite"
+                    >
                         <span>{successMessage}</span>
                     </div>
                 ) : null}
@@ -72,7 +76,9 @@ export default async function AdminInvitePage({ searchParams }: AdminInvitePageP
                     {currentTab === 'invite' ? (
                         <div className="px-6 py-8 sm:px-8 sm:py-10">
                             <div className="mb-6">
-                                <h2 className="text-lg font-semibold tracking-tight">招待リンクを送信</h2>
+                                <h2 className="text-lg font-semibold tracking-tight">
+                                    招待リンクを送信
+                                </h2>
                                 <p className="mt-1 text-sm text-base-content/60">
                                     招待リンクをメールで送信します。リンクは{' '}
                                     {process.env.NEXT_PUBLIC_INVITATION_EXPIRE_HOURS ?? '48'}{' '}
@@ -84,7 +90,9 @@ export default async function AdminInvitePage({ searchParams }: AdminInvitePageP
                     ) : (
                         <div className="px-6 py-6 sm:px-8">
                             <div className="mb-4">
-                                <h2 className="text-lg font-semibold tracking-tight">登録ユーザー一覧</h2>
+                                <h2 className="text-lg font-semibold tracking-tight">
+                                    登録ユーザー一覧
+                                </h2>
                                 <p className="mt-1 text-sm text-base-content/60">
                                     無効化すると、現在のログインセッションも即時失効します。
                                 </p>
@@ -109,18 +117,28 @@ export default async function AdminInvitePage({ searchParams }: AdminInvitePageP
                                             return (
                                                 <tr key={user.id}>
                                                     <td>
-                                                        <span className={user.isActive ? '' : 'opacity-40'}>
+                                                        <span
+                                                            className={
+                                                                user.isActive ? '' : 'opacity-40'
+                                                            }
+                                                        >
                                                             {user.displayName}
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <span className={user.isActive ? '' : 'opacity-40'}>
+                                                        <span
+                                                            className={
+                                                                user.isActive ? '' : 'opacity-40'
+                                                            }
+                                                        >
                                                             {user.email}
                                                         </span>
                                                     </td>
                                                     <td>
                                                         <span className="badge badge-outline">
-                                                            {user.role === 'admin' ? '管理者' : 'メンバー'}
+                                                            {user.role === 'admin'
+                                                                ? '管理者'
+                                                                : 'メンバー'}
                                                         </span>
                                                     </td>
                                                     <td>
@@ -136,7 +154,11 @@ export default async function AdminInvitePage({ searchParams }: AdminInvitePageP
                                                     </td>
                                                     <td className="text-right">
                                                         <form action={updateUserActiveAction}>
-                                                            <input type="hidden" name="userId" value={user.id} />
+                                                            <input
+                                                                type="hidden"
+                                                                name="userId"
+                                                                value={user.id}
+                                                            />
                                                             <input
                                                                 type="hidden"
                                                                 name="nextIsActive"
@@ -156,7 +178,9 @@ export default async function AdminInvitePage({ searchParams }: AdminInvitePageP
                                                                         : undefined
                                                                 }
                                                             >
-                                                                {user.isActive ? '無効化' : '有効化'}
+                                                                {user.isActive
+                                                                    ? '無効化'
+                                                                    : '有効化'}
                                                             </button>
                                                         </form>
                                                     </td>

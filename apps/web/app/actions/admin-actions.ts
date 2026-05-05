@@ -16,10 +16,7 @@ const createInvitationSchema = z.object({
             .min(1, 'メールアドレスを入力してください。')
             .max(255, 'メールアドレスは255文字以内で入力してください。'),
     ),
-    role: z.preprocess(
-        (v) => (typeof v === 'string' ? v : 'member'),
-        z.enum(['admin', 'member']),
-    ),
+    role: z.preprocess((v) => (typeof v === 'string' ? v : 'member'), z.enum(['admin', 'member'])),
 });
 
 export type CreateInvitationState = {
@@ -125,7 +122,10 @@ export async function createInvitationAction(
     });
 
     if (!parsed.success) {
-        return { error: parsed.error.issues[0]?.message ?? '入力内容をご確認ください。', success: false };
+        return {
+            error: parsed.error.issues[0]?.message ?? '入力内容をご確認ください。',
+            success: false,
+        };
     }
 
     const authContext = await getAuthContext();
@@ -153,16 +153,25 @@ export async function createInvitationAction(
                 return { error: '管理者権限が必要です。', success: false };
             }
             if (response.status === 409) {
-                return { error: message ?? 'このメールアドレスへの招待はすでに存在します。', success: false };
+                return {
+                    error: message ?? 'このメールアドレスへの招待はすでに存在します。',
+                    success: false,
+                };
             }
             if (response.status >= 500) {
-                return { error: 'サーバーでエラーが発生しました。時間をおいて再度お試しください。', success: false };
+                return {
+                    error: 'サーバーでエラーが発生しました。時間をおいて再度お試しください。',
+                    success: false,
+                };
             }
 
             return { error: message ?? '招待の送信に失敗しました。', success: false };
         }
     } catch {
-        return { error: 'ネットワークに接続できませんでした。接続状況を確認してください。', success: false };
+        return {
+            error: 'ネットワークに接続できませんでした。接続状況を確認してください。',
+            success: false,
+        };
     }
 
     return { error: null, success: true };
@@ -184,20 +193,27 @@ export async function updateUserActiveAction(formData: FormData) {
 
     const authContext = await getAuthContext();
     if (!authContext) {
-        redirect(buildAdminRedirectUrl({ error: 'セッションが見つかりません。再ログインしてください。' }));
+        redirect(
+            buildAdminRedirectUrl({
+                error: 'セッションが見つかりません。再ログインしてください。',
+            }),
+        );
     }
 
     try {
-        const response = await fetch(`${defaultApiUrl}/users/${encodeURIComponent(parsed.data.userId)}/active`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                Cookie: authContext.cookieHeader,
-                ...(authContext.csrfToken ? { 'X-CSRF-Token': authContext.csrfToken } : {}),
+        const response = await fetch(
+            `${defaultApiUrl}/users/${encodeURIComponent(parsed.data.userId)}/active`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Cookie: authContext.cookieHeader,
+                    ...(authContext.csrfToken ? { 'X-CSRF-Token': authContext.csrfToken } : {}),
+                },
+                cache: 'no-store',
+                body: JSON.stringify({ isActive: parsed.data.nextIsActive }),
             },
-            cache: 'no-store',
-            body: JSON.stringify({ isActive: parsed.data.nextIsActive }),
-        });
+        );
 
         if (!response.ok) {
             const payload = (await response.json().catch(() => null)) as unknown;
@@ -208,10 +224,14 @@ export async function updateUserActiveAction(formData: FormData) {
             }
 
             if (response.status === 404) {
-                redirect(buildAdminRedirectUrl({ error: message ?? '対象ユーザーが見つかりません。' }));
+                redirect(
+                    buildAdminRedirectUrl({ error: message ?? '対象ユーザーが見つかりません。' }),
+                );
             }
 
-            redirect(buildAdminRedirectUrl({ error: message ?? 'ユーザー状態の更新に失敗しました。' }));
+            redirect(
+                buildAdminRedirectUrl({ error: message ?? 'ユーザー状態の更新に失敗しました。' }),
+            );
         }
     } catch {
         redirect(buildAdminRedirectUrl({ error: 'ネットワークに接続できませんでした。' }));
@@ -219,7 +239,9 @@ export async function updateUserActiveAction(formData: FormData) {
 
     redirect(
         buildAdminRedirectUrl({
-            success: parsed.data.nextIsActive ? 'ユーザーを有効化しました。' : 'ユーザーを無効化しました。',
+            success: parsed.data.nextIsActive
+                ? 'ユーザーを有効化しました。'
+                : 'ユーザーを無効化しました。',
         }),
     );
 }

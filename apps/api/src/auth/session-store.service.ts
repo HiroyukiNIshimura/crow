@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 
 type SessionInput = {
