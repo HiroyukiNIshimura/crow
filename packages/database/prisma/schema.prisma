@@ -27,12 +27,13 @@ model User {
   isActive       Boolean        @default(true)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-  sessions             Session[]
-  workLogs             WorkLog[]
-  dailyNotes           DailyNote[]
-  authAuditLogs        AuthAuditLog[]
-  sentInvitations      UserInvitation[]
-  passwordResetTokens  PasswordResetToken[]
+  sessions                 Session[]
+  workLogs                 WorkLog[]
+  dailyNotes               DailyNote[]
+  authAuditLogs            AuthAuditLog[]
+  sentInvitations          UserInvitation[]
+  passwordResetTokens      PasswordResetToken[]
+  monthlyWorkStandards     MonthlyWorkStandard[]
 
   @@map("users")
 }
@@ -129,4 +130,21 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+model MonthlyWorkStandard {
+  id              String   @id @default(cuid())
+  userId          String
+  year            Int
+  month           Int
+  hoursPerDay     Float
+  workDaysInMonth Int?
+  totalHours      Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year, month])
+  @@index([userId, year])
+  @@map("monthly_work_standards")
 }

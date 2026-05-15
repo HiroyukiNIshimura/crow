@@ -11,6 +11,7 @@ import {
     updateDayNoteAction,
     updateWorkLogAction,
 } from './actions/work-log-actions';
+import { getWorkStandard } from './actions/work-standards-actions';
 import { getCurrentUser } from './lib/auth';
 
 type HomePageProps = {
@@ -214,8 +215,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     const { year, month, monthText } = parseMonthParam(monthParam, todayDate);
     const selectedDate = ensureSelectedDate(year, month, dateParam);
 
-    const monthData = await getMonthLogs(year, month);
-    const dayData = await getDayLogs(selectedDate);
+    const [monthData, dayData, workStandard] = await Promise.all([
+        getMonthLogs(year, month),
+        getDayLogs(selectedDate),
+        getWorkStandard(year, month),
+    ]);
 
     const monthSummary = monthData?.summary ?? {
         recordedDays: 0,
@@ -281,6 +285,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         <Link href={`/?month=${todayDate.slice(0, 7)}&date=${todayDate}`} className="btn btn-ghost btn-sm">
                             今日へ
                         </Link>
+                        <Link href={`/work-standards?year=${year}&month=${month}`} className="btn btn-ghost btn-sm">
+                            稼働基準時間
+                        </Link>
                         {currentUser.role === 'admin' && (
                             <Link href="/admin/invite" className="btn btn-outline btn-sm">
                                 ユーザーを招待
@@ -331,10 +338,24 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 border-b border-base-200 p-3 sm:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-2 border-b border-base-200 p-3 sm:grid-cols-5">
                             <div>
-                                <p className="text-xs text-base-content/50">記録済み</p>
-                                <p className="text-lg font-semibold">{monthSummary.recordedDays}日</p>
+                                <p className="text-xs text-base-content/50">基準時間</p>
+                                {workStandard ? (
+                                    <p className="text-lg font-semibold">
+                                        {workStandard.totalHours}h
+                                        <span className="ml-1 text-xs font-normal text-base-content/40">
+                                            ({workStandard.workDaysInMonth}日×{workStandard.hoursPerDay}h)
+                                        </span>
+                                    </p>
+                                ) : (
+                                    <Link
+                                        href={`/work-standards?year=${year}&month=${month}`}
+                                        className="text-sm font-medium text-warning underline-offset-2 hover:underline"
+                                    >
+                                        未設定
+                                    </Link>
+                                )}
                             </div>
                             <div>
                                 <p className="text-xs text-base-content/50">今月合計</p>
@@ -343,8 +364,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                 </p>
                             </div>
                             <div>
+                                <p className="text-xs text-base-content/50">記録済み</p>
+                                <p className="text-lg font-semibold">{monthSummary.recordedDays}日</p>
+                            </div>
+                            <div>
                                 <p className="text-xs text-base-content/50">作業ログ件数</p>
-                                <p className="text-sm font-medium">{monthSummary.totalLogs}件</p>
+                                <p className="text-lg font-semibold">{monthSummary.totalLogs}件</p>
                             </div>
                             <div>
                                 <p className="text-xs text-base-content/50">メモあり日</p>
