@@ -39,7 +39,7 @@ export function ThemeToggle() {
     }
 
     return (
-        <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-base-content/80 transition hover:bg-base-200/70">
+        <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-base-content/80 transition hover:bg-base-200/70">
             <span aria-hidden="true" className="text-base leading-none">
                 ☀
             </span>

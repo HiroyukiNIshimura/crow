@@ -30,8 +30,8 @@ export function LogoutButton() {
 
     return (
         <div className="relative">
-            <details className="dropdown dropdown-end">
-                <summary className="btn btn-ghost btn-sm list-none">
+            <details className="dropdown">
+                <summary className="btn btn-ghost btn-sm list-none shrink-0 whitespace-nowrap">
                     アカウント
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -47,7 +47,7 @@ export function LogoutButton() {
                         />
                     </svg>
                 </summary>
-                <ul className="dropdown-content z-10 mt-1 w-44 rounded-box border border-base-200 bg-base-100 p-1 shadow-lg">
+                <ul className="dropdown-content left-0 right-auto z-10 mt-1 w-44 max-w-[calc(100vw-2rem)] rounded-box border border-base-200 bg-base-100 p-1 shadow-lg sm:left-auto sm:right-0">
                     <li>
                         <Link href="/change-password" className="rounded px-4 py-2 text-sm">
                             パスワード変更

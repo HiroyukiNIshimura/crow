@@ -281,7 +281,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <Link href={`/?month=${todayDate.slice(0, 7)}&date=${todayDate}`} className="btn btn-ghost btn-sm">
                             今日へ
                         </Link>
